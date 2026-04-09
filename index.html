@@ -8,15 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Campo Hídrico">
 <title>Campo Hídrico — Coleta de Dados</title>
 <link rel="manifest" href="manifest.json">
-<script>
-// Mata todos os Service Workers antigos imediatamente
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister());
-  });
-  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-}
-</script>
+
 <style>
 :root{--vd:#1a6b4a;--vm:#2d8f65;--vc:#63c5a0;--vs:#e8f5ef;--ad:#1a4a7a;--am:#2d6ba8;--ac:#7ab8e8;--as:#e8f2fb;--am2:#f0a500;--verm:#d94040;--c1:#2c3e50;--c2:#7f8c8d;--c3:#ecf0f1;--c4:#f8f9fa;--r:12px;--rg:20px;--rp:8px;--s1:0 2px 12px rgba(0,0,0,.08);--s2:0 4px 20px rgba(0,0,0,.14)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -191,9 +183,9 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
   </div>
   <p class="st">Ações</p>
   <div class="gac">
-    <button class="bac dst" id="bn-novo" onclick="abrNovo()"><span class="ic">➕</span><span class="tx">Novo Questionário</span></button>
-    <button class="bac vd" onclick="irT('tela-lista')"><span class="ic">📋</span><span class="tx">Questionários Salvos</span></button>
-    <button class="bac az" onclick="irT('tela-exp')"><span class="ic">📤</span><span class="tx">Exportar Dados</span></button>
+    <button class="bac dst" id="bn-novo" onclick="abrirNovo()"><span class="ic">➕</span><span class="tx">Novo Questionário</span></button>
+    <button class="bac vd" onclick="irTela('tela-lista')"><span class="ic">📋</span><span class="tx">Questionários Salvos</span></button>
+    <button class="bac az" onclick="irTela('tela-exp')"><span class="ic">📤</span><span class="tx">Exportar Dados</span></button>
     <button class="bac" onclick="document.getElementById('ii2').click()"><span class="ic">📥</span><span class="tx">Importar Backup</span></button>
   </div>
   <div class="aviso">
@@ -206,7 +198,7 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
 
 <!-- LISTA -->
 <section class="tela" id="tela-lista">
-  <button class="bvt" onclick="irT('tela-home')">← Voltar</button>
+  <button class="bvt" onclick="irTela('tela-home')">← Voltar</button>
   <p class="st">Questionários Salvos</p>
   <div class="filtros">
     <input type="text" class="ib" id="busca" placeholder="🔍 Buscar..." oninput="rLista()">
@@ -234,7 +226,7 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
       <div class="campo"><label class="lbl">Município</label><input type="text" class="inp" id="a-mun" placeholder="Nome do município"></div>
       <div class="campo"><label class="lbl">Comunidade / Local</label><input type="text" class="inp" id="a-com" placeholder="Ex: Comunidade São José"></div>
       <div class="campo"><label class="lbl">📍 Geolocalização (opcional)</label>
-        <div style="display:flex;gap:8px;align-items:center"><input type="text" class="inp" id="a-geo" placeholder="Lat, Long" readonly style="flex:1"><button onclick="cGeo('a-geo')" style="padding:12px 14px;background:var(--vd);color:white;border-radius:var(--r);font-size:.8rem;font-weight:600;flex-shrink:0;border:none;cursor:pointer">📡</button></div>
+        <div style="display:flex;gap:8px;align-items:center"><input type="text" class="inp" id="a-geo" placeholder="Lat, Long" readonly style="flex:1"><button onclick="capturarGeo('a-geo')" style="padding:12px 14px;background:var(--vd);color:white;border-radius:var(--r);font-size:.8rem;font-weight:600;flex-shrink:0;border:none;cursor:pointer">📡</button></div>
         <input type="text" class="inp" id="a-geom" placeholder="Ou insira manualmente (lat, long)" style="margin-top:6px">
       </div>
       <div class="campo"><label class="lbl">Observações de campo</label><textarea class="txt" id="a-obs" placeholder="Anotações gerais..."></textarea></div>
@@ -366,12 +358,12 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
       <div class="dv"></div>
       <div class="campo"><label class="lbl">📷 Foto do local (opcional)</label>
         <div class="cesp" onclick="document.getElementById('if-a').click()"><div class="ic2">📷</div><p>Toque para tirar foto ou selecionar da galeria</p><span class="bcap">Capturar foto</span></div>
-        <input type="file" id="if-a" accept="image/*" capture="environment" style="display:none" onchange="pFoto(this,'pv-a','fd-a')">
+        <input type="file" id="if-a" accept="image/*" capture="environment" style="display:none" onchange="processarFoto(this,'pv-a','fd-a')">
         <img id="pv-a" src="" alt="" style="display:none;max-width:100%;border-radius:var(--r);margin-top:8px">
       </div>
       <div class="campo"><label class="lbl">✍️ Assinatura (opcional)</label>
         <canvas id="cv-a" class="asn"></canvas>
-        <div class="aac"><button class="bas lp" onclick="lAss('cv-a')">🗑 Limpar</button><button class="bas sv" onclick="sAss('cv-a','ad-a','aok-a')">💾 Salvar</button></div>
+        <div class="aac"><button class="bas lp" onclick="limparAssinatura('cv-a')">🗑 Limpar</button><button class="bas sv" onclick="salvarAssinatura('cv-a','ad-a','aok-a')">💾 Salvar</button></div>
         <p class="aok" id="aok-a">✅ Assinatura salva</p>
       </div>
     </div>
@@ -384,7 +376,7 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
       <div class="campo"><label class="lbl">Município / sede da entrevista</label><input type="text" class="inp" id="e-mun" placeholder="Nome do município"></div>
       <div class="campo"><label class="lbl">Local da entrevista</label><input type="text" class="inp" id="e-com" placeholder="Ex: Escritório EMPAER, campo..."></div>
       <div class="campo"><label class="lbl">📍 Geolocalização (opcional)</label>
-        <div style="display:flex;gap:8px;align-items:center"><input type="text" class="inp" id="e-geo" placeholder="Lat, Long" readonly style="flex:1"><button onclick="cGeo('e-geo')" style="padding:12px 14px;background:var(--ad);color:white;border-radius:var(--r);font-size:.8rem;font-weight:600;flex-shrink:0;border:none;cursor:pointer">📡</button></div>
+        <div style="display:flex;gap:8px;align-items:center"><input type="text" class="inp" id="e-geo" placeholder="Lat, Long" readonly style="flex:1"><button onclick="capturarGeo('e-geo')" style="padding:12px 14px;background:var(--ad);color:white;border-radius:var(--r);font-size:.8rem;font-weight:600;flex-shrink:0;border:none;cursor:pointer">📡</button></div>
         <input type="text" class="inp" id="e-geom" placeholder="Ou insira manualmente (lat, long)" style="margin-top:6px">
       </div>
       <div class="campo"><label class="lbl">Observações de campo</label><textarea class="txt" id="e-obs" placeholder="Anotações gerais..."></textarea></div>
@@ -494,63 +486,63 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
       <div class="dv"></div>
       <div class="campo"><label class="lbl">📷 Foto (opcional)</label>
         <div class="cesp" onclick="document.getElementById('if-e').click()"><div class="ic2">📷</div><p>Toque para tirar foto ou selecionar</p><span class="bcap">Capturar foto</span></div>
-        <input type="file" id="if-e" accept="image/*" capture="environment" style="display:none" onchange="pFoto(this,'pv-e','fd-e')">
+        <input type="file" id="if-e" accept="image/*" capture="environment" style="display:none" onchange="processarFoto(this,'pv-e','fd-e')">
         <img id="pv-e" src="" alt="" style="display:none;max-width:100%;border-radius:var(--r);margin-top:8px">
       </div>
       <div class="campo"><label class="lbl">✍️ Assinatura (opcional)</label>
         <canvas id="cv-e" class="asn"></canvas>
-        <div class="aac"><button class="bas lp" onclick="lAss('cv-e')">🗑 Limpar</button><button class="bas sv" onclick="sAss('cv-e','ad-e','aok-e')">💾 Salvar</button></div>
+        <div class="aac"><button class="bas lp" onclick="limparAssinatura('cv-e')">🗑 Limpar</button><button class="bas sv" onclick="salvarAssinatura('cv-e','ad-e','aok-e')">💾 Salvar</button></div>
         <p class="aok" id="aok-e">✅ Assinatura salva</p>
       </div>
     </div>
   </div><!-- /ge -->
 
   <div class="fnav">
-    <button class="bnav vt" id="bn-vt" onclick="nBloco(-1)">← Voltar</button>
-    <button class="bnav av" id="bn-av" onclick="nBloco(1)">Avançar →</button>
+    <button class="bnav vt" id="bn-vt" onclick="navegarBloco(-1)">← Voltar</button>
+    <button class="bnav av" id="bn-av" onclick="navegarBloco(1)">Avançar →</button>
   </div>
   <div class="esp"></div>
 </section>
 
 <!-- RESUMO -->
 <section class="tela" id="tela-res">
-  <button class="bvt" onclick="irT('tela-form')">← Editar</button>
+  <button class="bvt" onclick="irTela('tela-form')">← Editar</button>
   <div class="rhd"><div class="ic3">✅</div><h2>Formulário Preenchido</h2><p id="rid">ID do registro</p></div>
   <div class="rsec"><h3>Status do Questionário</h3>
     <div class="ssel">
-      <div class="sop" data-s="rascunho"   onclick="selSt('rascunho')">📝 Rascunho</div>
-      <div class="sop" data-s="incompleto" onclick="selSt('incompleto')">⏳ Incompleto</div>
-      <div class="sop" data-s="concluido"  onclick="selSt('concluido')">✅ Concluído</div>
-      <div class="sop" data-s="enviado"    onclick="selSt('enviado')">📤 Enviado</div>
+      <div class="sop" data-s="rascunho"   onclick="selecionarStatus('rascunho')">📝 Rascunho</div>
+      <div class="sop" data-s="incompleto" onclick="selecionarStatus('incompleto')">⏳ Incompleto</div>
+      <div class="sop" data-s="concluido"  onclick="selecionarStatus('concluido')">✅ Concluído</div>
+      <div class="sop" data-s="enviado"    onclick="selecionarStatus('enviado')">📤 Enviado</div>
     </div>
   </div>
   <div class="rsec"><h3>Resumo das Respostas</h3><div id="rc"></div></div>
   <div class="rsec"><h3>Exportar Este Questionário</h3>
     <div class="gexp">
-      <button class="bexp j" onclick="expI('json')"><span class="xt">JSON</span><span>Exportar</span></button>
-      <button class="bexp c" onclick="expI('csv')"><span class="xt">CSV</span><span>Exportar</span></button>
+      <button class="bexp j" onclick="exportarIndividual('json')"><span class="xt">JSON</span><span>Exportar</span></button>
+      <button class="bexp c" onclick="exportarIndividual('csv')"><span class="xt">CSV</span><span>Exportar</span></button>
     </div>
   </div>
-  <button class="bp" onclick="irT('tela-home')">🏠 Voltar ao início</button>
+  <button class="bp" onclick="irTela('tela-home')">🏠 Voltar ao início</button>
   <button class="bs" id="bn-novo-res">➕ Novo questionário</button>
   <div class="esp"></div>
 </section>
 
 <!-- EXPORTAR -->
 <section class="tela" id="tela-exp">
-  <button class="bvt" onclick="irT('tela-home')">← Voltar</button>
+  <button class="bvt" onclick="irTela('tela-home')">← Voltar</button>
   <p class="st">Exportar Dados</p>
   <div class="rsec"><h3>Exportar Todos os Questionários</h3>
     <p style="font-size:.85rem;color:var(--c2);margin-bottom:14px;line-height:1.5">Recomendado ao final de cada dia de campo.</p>
     <div class="gexp">
-      <button class="bexp j" onclick="expT('json')"><span class="xt">JSON</span><span>Backup completo</span></button>
-      <button class="bexp c" onclick="expT('csv')"><span class="xt">CSV</span><span>Planilha</span></button>
+      <button class="bexp j" onclick="exportarTodos('json')"><span class="xt">JSON</span><span>Backup completo</span></button>
+      <button class="bexp c" onclick="exportarTodos('csv')"><span class="xt">CSV</span><span>Planilha</span></button>
     </div>
   </div>
   <div class="rsec"><h3>Importar Backup</h3>
     <p style="font-size:.85rem;color:var(--c2);margin-bottom:14px;line-height:1.5">Restaure dados de um arquivo JSON exportado anteriormente.</p>
     <div class="cesp" onclick="document.getElementById('ii').click()"><div class="ic2">📥</div><p>Toque para selecionar arquivo JSON de backup</p><span class="bcap">Selecionar arquivo</span></div>
-    <input type="file" id="ii" accept=".json" style="display:none" onchange="pImp(this)">
+    <input type="file" id="ii" accept=".json" style="display:none" onchange="processarImportacao(this)">
   </div>
   <div class="aviso">
     <p>🔒 Os dados ficam salvos <strong>neste dispositivo</strong>, mesmo sem internet.</p>
@@ -565,12 +557,12 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
   <h3>Novo Questionário</h3>
   <p>Selecione o tipo de formulário:</p>
   <div class="tgr">
-    <div class="tcd agr" id="tc-a" onclick="selT('agricultor')"><div class="tic">🌾</div><div class="tn">Agricultor Familiar</div><div class="td">Para produtores rurais e agricultores familiares</div></div>
-    <div class="tcd ext" id="tc-e" onclick="selT('extensionista')"><div class="tic">🔬</div><div class="tn">Técnico Extensionista</div><div class="td">Para técnicos, engenheiros e agentes de extensão</div></div>
+    <div class="tcd agr" id="tc-a" onclick="selecionarTipo('agricultor')"><div class="tic">🌾</div><div class="tn">Agricultor Familiar</div><div class="td">Para produtores rurais e agricultores familiares</div></div>
+    <div class="tcd ext" id="tc-e" onclick="selecionarTipo('extensionista')"><div class="tic">🔬</div><div class="tn">Técnico Extensionista</div><div class="td">Para técnicos, engenheiros e agentes de extensão</div></div>
   </div>
   <div class="drac">
-    <button class="bdr cn" id="bn-cancel-novo" onclick="fchD('novo')">Cancelar</button>
-    <button class="bdr ok" id="bn-iniciar" onclick="iniciar()">Iniciar →</button>
+    <button class="bdr cn" id="bn-cancel-novo" onclick="fecharDrawer('novo')">Cancelar</button>
+    <button class="bdr ok" id="bn-iniciar" onclick="iniciarForm()">Iniciar →</button>
   </div>
 </div>
 
@@ -596,253 +588,600 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
   </div>
 </div>
 
-<input type="file" id="ii2" accept=".json" style="display:none" onchange="pImp(this)">
+<input type="file" id="ii2" accept=".json" style="display:none" onchange="processarImportacao(this)">
+
 
 <script>
-// Campo Hídrico — JS v2
-const DBN='CampoHidricoDB',DBV=1,ST='questionarios';
-let db=null,FA=null,TS='agricultor',BA=0,IDX=null,AST=null;
-const BA_=['Coleta','I.Ident','II.Prop','III.Água','IV.Impac','V.Adapt','VI.Resíd','VII.Perc'];
-const BE_=['Coleta','1.Perfil','2.Percep','3.Impac','4.Manejo','5.Políti','6.Amb','7.Final'];
+// ============================================================
+// CAMPO HIDRICO — JS LIMPO
+// Todas as funcoes sao declaradas com "function" normal,
+// sem window.X, sem escopo separado. Funciona em qualquer
+// ambiente: file://, GitHub Pages, PWA instalado.
+// ============================================================
 
-// Expor funções no escopo global ANTES de qualquer DOMContentLoaded
-// Isso garante que onclick inline no HTML funcione mesmo sem servidor HTTP
-window.irT=function(id){
-  document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa'));
-  document.getElementById(id).classList.add('ativa');
-  window.scrollTo(0,0);
-  if(id==='tela-home')updSt();
-  if(id==='tela-lista')rLista();
-  if(id==='tela-res')rRes();
-};
-window.abrD=function(id){document.getElementById('bg-'+id).style.display='block';const d=document.getElementById('dr-'+id);d.style.display='block';d.classList.add('open')};
-window.fchD=function(id){document.getElementById('bg-'+id).style.display='none';document.getElementById('dr-'+id).style.display='none'};
-window.abrNovo=function(){TS='agricultor';document.getElementById('tc-a').classList.add('s3');document.getElementById('tc-e').classList.remove('s3');window.abrD('novo')};
-window.selT=function(t){TS=t;document.getElementById('tc-a').classList.toggle('s3',t==='agricultor');document.getElementById('tc-e').classList.toggle('s3',t==='extensionista')};
-window.iniciar=async function(){
-  window.fchD('novo');
-  if(!db){try{await aDB()}catch(e){toast('Erro no banco de dados.','err');return}}
-  FA={id:gID(TS),tipo:TS,status:'rascunho',dataCriacao:now(),dataEdicao:now(),blocoAtual:0,respostas:{},municipio:'',comunidade:'',entrevistador:'',fotoData:null,assData:null};
-  try{await put(FA);localStorage.setItem('lf',FA.id)}catch(e){console.warn(e)}
-  abrForm();
-};
+var DB_NAME = 'CampoHidricoDB';
+var DB_VER  = 1;
+var DB_STORE = 'questionarios';
 
-// DB
-function aDB(){return new Promise((r,j)=>{const q=indexedDB.open(DBN,DBV);q.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(ST))d.createObjectStore(ST,{keyPath:'id'})};q.onsuccess=e=>{db=e.target.result;r(db)};q.onerror=e=>j(e)})}
-function put(o){return new Promise((r,j)=>{const t=db.transaction(ST,'readwrite');t.objectStore(ST).put(o).onsuccess=r;t.onerror=j})}
-function all(){return new Promise((r,j)=>{const q=db.transaction(ST,'readonly').objectStore(ST).getAll();q.onsuccess=e=>r(e.target.result||[]);q.onerror=j})}
-function get(id){return new Promise((r,j)=>{const q=db.transaction(ST,'readonly').objectStore(ST).get(id);q.onsuccess=e=>r(e.target.result);q.onerror=j})}
-function del(id){return new Promise((r,j)=>{db.transaction(ST,'readwrite').objectStore(ST).delete(id).onsuccess=r})}
+var db       = null;
+var formAtual = null;
+var tipoSel  = 'agricultor';
+var blocoAt  = 0;
+var idExcluir = null;
+var saveTimer = null;
 
-// UTILS
-function gID(t){return(t==='agricultor'?'AGR':'EXT')+'-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).substr(2,4).toUpperCase()}
-function now(){return new Date().toISOString()}
-function fmt(s){if(!s)return'---';const d=new Date(s);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+var BLOCOS_AGR = ['Coleta','I.Ident','II.Prop','III.Agua','IV.Impac','V.Adapt','VI.Resid','VII.Perc'];
+var BLOCOS_EXT = ['Coleta','1.Perfil','2.Percep','3.Impac','4.Manejo','5.Politi','6.Amb','7.Final'];
 
-// TOAST
-let TT=null;
-function toast(m,t){const e=document.getElementById('toast');e.textContent=m;e.className='toast '+(t||'');clearTimeout(TT);setTimeout(()=>e.classList.add('vis'),10);TT=setTimeout(()=>e.classList.remove('vis'),3000)}
-
-// CONEXÃO
-function updCx(){const b=document.getElementById('bcx'),t=document.getElementById('tcx');if(navigator.onLine){b.className='bcx on';t.textContent='Online'}else{b.className='bcx off';t.textContent='Offline'}}
-window.addEventListener('online',updCx);window.addEventListener('offline',updCx);
-
-// TELAS
-// STATS
-async function updSt(){
-  const a=await all(),h=new Date().toDateString();
-  document.getElementById('st0').textContent=a.length;
-  document.getElementById('st1').textContent=a.filter(q=>q.status==='concluido'||q.status==='enviado').length;
-  document.getElementById('st2').textContent=a.filter(q=>new Date(q.dataCriacao).toDateString()===h).length;
-}
-
-// ABRIR FORM
-function abrForm(f){
-  if(f)FA=f;
-  const t=FA.tipo,p=t==='agricultor'?'a':'e';
-  document.getElementById('ga').style.display=t==='agricultor'?'block':'none';
-  document.getElementById('ge').style.display=t==='extensionista'?'block':'none';
-  const bg=document.getElementById('fbg');
-  bg.textContent=t==='agricultor'?'🌾 Agricultor Familiar':'🔬 Técnico Extensionista';
-  bg.className='fbg '+(t==='agricultor'?'ta':'te');
-  document.getElementById('fid').textContent='ID: '+FA.id;
-  BA=FA.blocoAtual||0;
-  const bs=t==='agricultor'?BA_:BE_;
-  const nav=document.getElementById('enav');nav.innerHTML='';
-  bs.forEach((b,i)=>{const btn=document.createElement('button');btn.className='eb'+(i===BA?' at':'');btn.textContent=b;btn.onclick=()=>{salva();BA=i;mBloco()};nav.appendChild(btn)});
-  pForm(t,FA.respostas||{});
-  setTimeout(()=>iCv(t==='agricultor'?'cv-a':'cv-e'),200);
-  mBloco();
-  regAS(t);
-  window.irT('tela-form');
-}
-
-function mBloco(){
-  const t=FA.tipo,p=t==='agricultor'?'a':'e';
-  for(let i=0;i<8;i++){const e=document.getElementById(p+i);if(e)e.classList.remove('at')}
-  const el=document.getElementById(p+BA);if(el){el.classList.add('at');setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),60)}
-  document.querySelectorAll('.eb').forEach((b,i)=>b.classList.toggle('at',i===BA));
-  const pct=Math.round((BA/7)*100);
-  document.getElementById('pbr').style.width=pct+'%';
-  document.getElementById('ppct').textContent=pct+'%';
-  document.getElementById('btxt').textContent='Bloco '+(BA+1)+' de 8';
-  document.getElementById('bn-vt').style.visibility=BA===0?'hidden':'visible';
-  const ba=document.getElementById('bn-av');
-  if(BA===7){ba.textContent='Concluir ✅';ba.className='bnav fn'}else{ba.textContent='Avançar →';ba.className='bnav av'}
-  window.scrollTo(0,0);
-}
-
-function nBloco(d){salva();if(BA+d<0)return;if(BA+d>=8){window.irT('tela-res');return}BA+=d;mBloco()}
-
-// AUTOSAVE
-function regAS(t){
-  const g=document.getElementById(t==='agricultor'?'ga':'ge');
-  g.querySelectorAll('input,textarea,select').forEach(el=>{el.addEventListener('input',agS);el.addEventListener('change',agS)});
-}
-function agS(){clearTimeout(AST);AST=setTimeout(salva,800)}
-async function salva(){
-  if(!FA||!db)return;
-  const t=FA.tipo,p=t==='agricultor'?'a':'e',r=colR(t);
-  FA.entrevistador=r.entrev||'';FA.municipio=r.mun||'';FA.comunidade=r.com||'';
-  FA.respostas=r;FA.blocoAtual=BA;FA.dataEdicao=now();
-  if(window['fd-'+p])FA.fotoData=window['fd-'+p];
-  if(window['ad-'+p])FA.assData=window['ad-'+p];
-  try{await put(FA);localStorage.setItem('lf',FA.id)}catch(e){console.warn(e)}
-}
-
-// COLETAR RESPOSTAS
-function colR(t){
-  const p=t==='agricultor'?'a':'e',r={};
-  const g=document.getElementById(t==='agricultor'?'ga':'ge');
-  g.querySelectorAll('input[type=text],input[type=number],textarea,select').forEach(el=>{if(el.id&&el.id.startsWith(p+'-')){r[el.id.slice(p.length+1)]=el.value.trim()}});
-  g.querySelectorAll('input[type=radio]:checked').forEach(el=>{r[el.name.slice(p.length+1)]=el.value});
-  const cg={};
-  g.querySelectorAll('input[type=checkbox]').forEach(el=>{const k=el.name.slice(p.length+1);if(!cg[k])cg[k]=[];if(el.checked)cg[k].push(el.value)});
-  return Object.assign(r,cg);
-}
-
-// PREENCHER CAMPOS
-function pForm(t,resp){
-  if(!resp||!Object.keys(resp).length)return;
-  const p=t==='agricultor'?'a':'e';
-  const g=document.getElementById(t==='agricultor'?'ga':'ge');
-  Object.keys(resp).forEach(k=>{
-    const v=resp[k],el=document.getElementById(p+'-'+k);
-    if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT')){el.value=v;return}
-    if(typeof v==='string')g.querySelectorAll('input[type=radio][name="'+p+'-'+k+'"]').forEach(r=>{r.checked=r.value===v;if(r.checked)r.closest('.op,.lk')?.classList.add('s2')});
-    if(Array.isArray(v))g.querySelectorAll('input[type=checkbox][name="'+p+'-'+k+'"]').forEach(c=>{c.checked=v.includes(c.value);if(c.checked)c.closest('.op')?.classList.add('s2')});
+// ── DB ──────────────────────────────────────────────────────
+function abrirDB() {
+  return new Promise(function(res, rej) {
+    var req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = function(e) {
+      var d = e.target.result;
+      if (!d.objectStoreNames.contains(DB_STORE))
+        d.createObjectStore(DB_STORE, {keyPath: 'id'});
+    };
+    req.onsuccess = function(e) { db = e.target.result; res(db); };
+    req.onerror   = function(e) { rej(e.target.error); };
   });
-  const fd=resp.fotoData||FA.fotoData;
-  if(fd){const im=document.getElementById('pv-'+(t==='agricultor'?'a':'e'));if(im){im.src=fd;im.style.display='block'}window['fd-'+(t==='agricultor'?'a':'e')]=fd}
+}
+function dbPut(o) {
+  return new Promise(function(res, rej) {
+    var t = db.transaction(DB_STORE, 'readwrite');
+    t.objectStore(DB_STORE).put(o).onsuccess = res;
+    t.onerror = rej;
+  });
+}
+function dbAll() {
+  return new Promise(function(res, rej) {
+    var r = db.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).getAll();
+    r.onsuccess = function(e) { res(e.target.result || []); };
+    r.onerror   = rej;
+  });
+}
+function dbGet(id) {
+  return new Promise(function(res, rej) {
+    var r = db.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).get(id);
+    r.onsuccess = function(e) { res(e.target.result); };
+    r.onerror   = rej;
+  });
+}
+function dbDel(id) {
+  return new Promise(function(res, rej) {
+    db.transaction(DB_STORE, 'readwrite').objectStore(DB_STORE).delete(id).onsuccess = res;
+  });
 }
 
-// SAIR
-function sair(){salva();window.abrD('sair')}
-
-// LISTA
-async function rLista(){
-  let a=await all();
-  const tx=(document.getElementById('busca').value||'').toLowerCase();
-  const ft=document.getElementById('ft').value;
-  const fs=document.getElementById('fs').value;
-  if(tx)a=a.filter(q=>[q.id,q.municipio,q.comunidade,q.entrevistador].join(' ').toLowerCase().includes(tx));
-  if(ft)a=a.filter(q=>q.tipo===ft);if(fs)a=a.filter(q=>q.status===fs);
-  a.sort((x,y)=>new Date(y.dataEdicao)-new Date(x.dataEdicao));
-  const c=document.getElementById('lc');
-  if(!a.length){c.innerHTML='<div class="lv"><div class="iv">📋</div><p>Nenhum questionário encontrado.<br>Crie um novo na tela inicial.</p></div>';return}
-  c.innerHTML=a.map(q=>{
-    const tl=q.tipo==='agricultor'?'🌾 Agricultor':'🔬 Extensionista';
-    const lo=[q.municipio,q.comunidade].filter(Boolean).join(' / ')||'Local não informado';
-    const pr=calcP(q);
-    return`<div class="cq s${q.status[0]==='r'?'r':q.status[0]==='i'?'i':q.status[0]==='c'?'c2':'e'}">
-      <div class="cqt"><span class="cqid">${q.id}</span><span class="bst ${q.status}">${q.status}</span></div>
-      <div class="cqn">${tl} — ${lo}</div>
-      <div class="cqm"><span>📅 ${fmt(q.dataEdicao)}</span><span>👤 ${q.entrevistador||'Sem nome'}</span></div>
-      <div class="mp"><div class="mpb" style="width:${pr}%"></div></div>
-      <div class="cqa">
-        <button class="bm ab" onclick="abrQ('${q.id}')">✏️ Editar</button>
-        <button class="bm dp" onclick="dupQ('${q.id}')">📋 Dup</button>
-        <button class="bm ep" onclick="eUm('${q.id}','json')">JSON</button>
-        <button class="bm ep" onclick="eUm('${q.id}','csv')">CSV</button>
-        <button class="bm ex" onclick="pedX('${q.id}')">🗑</button>
-      </div>
-    </div>`}).join('');
+// ── UTILS ────────────────────────────────────────────────────
+function genId(t) {
+  return (t === 'agricultor' ? 'AGR' : 'EXT') +
+    '-' + Date.now().toString(36).toUpperCase() +
+    '-' + Math.random().toString(36).substr(2,4).toUpperCase();
 }
-function calcP(q){const r=q.respostas||{},tot=q.tipo==='agricultor'?23:21,p=Object.values(r).filter(v=>(typeof v==='string'&&v.trim())||(Array.isArray(v)&&v.length)).length;return Math.min(100,Math.round(p/tot*100))}
-async function abrQ(id){const q=await get(id);if(q){FA=q;TS=q.tipo;abrForm(q)}}
-async function dupQ(id){const q=await get(id);if(!q)return;const n=JSON.parse(JSON.stringify(q));n.id=gID(n.tipo);n.dataCriacao=now();n.dataEdicao=now();n.status='rascunho';await put(n);toast('Duplicado!','ok');rLista()}
-function pedX(id){IDX=id;window.abrD('excl')}
-async function confX(){window.fchD('excl');if(!IDX)return;await del(IDX);IDX=null;toast('Excluído.','av');rLista();updSt()}
-
-// RESUMO
-async function rRes(){
-  if(!FA)return;
-  try{const f=await get(FA.id);if(f)FA=f}catch(e){}
-  document.getElementById('rid').textContent='ID: '+FA.id+' | '+fmt(FA.dataCriacao);
-  document.querySelectorAll('.sop').forEach(e=>e.className='sop');
-  selSt(FA.status||'rascunho',false);
-  const r=FA.respostas||{},d=document.getElementById('rc');
-  const it=Object.entries(r).filter(([k,v])=>v&&((typeof v==='string'&&v.trim())||(Array.isArray(v)&&v.length))).map(([k,v])=>`<div class="rit"><span class="rp">${k}:</span><span class="rr">${(Array.isArray(v)?v.join(', '):String(v)).substring(0,200)}</span></div>`);
-  d.innerHTML=it.length?it.join(''):'<p style="font-size:.85rem;color:var(--c2)">Nenhuma resposta ainda.</p>';
-}
-function selSt(s,sv=true){document.querySelectorAll('.sop').forEach(e=>e.className='sop'+(e.dataset.s===s?' a-'+s:''));if(FA){FA.status=s;if(sv)put(FA).catch(console.warn)}}
-
-// EXPORT
-function expI(f){if(FA){salva();if(f==='json')dlJ([FA],'form-'+FA.id);else dlC([FA],'form-'+FA.id)}}
-function eUm(id,f){get(id).then(q=>{if(q){if(f==='json')dlJ([q],'form-'+id);else dlC([q],'form-'+id)}})}
-async function expT(f){const a=await all();if(!a.length){toast('Sem dados para exportar.','av');return};const d=new Date().toISOString().slice(0,10);if(f==='json')dlJ(a,'backup-'+d);else dlC(a,'planilha-'+d);toast('Exportados: '+a.length+' registros','ok')}
-function dlJ(data,n){const b=new Blob([JSON.stringify({app:'Campo Hídrico v2',exportado:now(),total:data.length,dados:data},null,2)],{type:'application/json'});_dl(b,n+'.json')}
-function dlC(data,n){if(!data.length)return;const fx=['id','tipo','status','dataCriacao','dataEdicao','entrevistador','municipio','comunidade'],rk=new Set();data.forEach(q=>Object.keys(q.respostas||{}).forEach(k=>rk.add(k)));const cols=[...fx,...Array.from(rk)];const rows=data.map(q=>cols.map(c=>{let v=fx.includes(c)?q[c]||'':(q.respostas||{})[c]||'';if(Array.isArray(v))v=v.join(' | ');return'"'+String(v).replace(/"/g,'""').replace(/\n/g,' ')+'"'}).join(','));_dl(new Blob(['\uFEFF'+[cols.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'}),n+'.csv')}
-function _dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();document.body.removeChild(a)}
-
-// IMPORT
-async function pImp(inp){if(!inp.files||!inp.files[0])return;try{const t=await inp.files[0].text(),j=JSON.parse(t),l=j.dados||j;if(!Array.isArray(l)){toast('Arquivo inválido.','err');return}let n=0;for(const q of l)if(q&&q.id){await put(q);n++}toast(n+' registros importados!','ok');updSt();inp.value=''}catch(e){toast('Erro ao importar.','err')}}
-
-// GEO
-function cGeo(id){if(!navigator.geolocation){toast('GPS não disponível.','av');return}toast('Capturando localização...','');navigator.geolocation.getCurrentPosition(p=>{const el=document.getElementById(id);if(el){el.value=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);agS()}toast('Localização capturada!','ok')},()=>toast('GPS indisponível. Insira manualmente.','av'),{enableHighAccuracy:true,timeout:10000})}
-
-// FOTO
-function pFoto(inp,pv,dk){if(!inp.files||!inp.files[0])return;const r=new FileReader();r.onload=e=>{window[dk]=e.target.result;const im=document.getElementById(pv);if(im){im.src=e.target.result;im.style.display='block'}agS();toast('Foto salva!','ok')};r.readAsDataURL(inp.files[0])}
-
-// CANVAS
-function iCv(id){const cv=document.getElementById(id);if(!cv)return;const rc=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=rc.width*dpr;cv.height=rc.height*dpr;const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);ctx.lineWidth=2;ctx.lineCap='round';ctx.strokeStyle='#1a2740';let draw=false;const pos=e=>{const r=cv.getBoundingClientRect();return e.touches?{x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top}:{x:e.clientX-r.left,y:e.clientY-r.top}};cv.addEventListener('mousedown',e=>{draw=true;ctx.beginPath();const p=pos(e);ctx.moveTo(p.x,p.y)});cv.addEventListener('mousemove',e=>{if(!draw)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()});cv.addEventListener('mouseup',()=>draw=false);cv.addEventListener('mouseleave',()=>draw=false);cv.addEventListener('touchstart',e=>{e.preventDefault();draw=true;ctx.beginPath();const p=pos(e);ctx.moveTo(p.x,p.y)},{passive:false});cv.addEventListener('touchmove',e=>{e.preventDefault();if(!draw)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()},{passive:false});cv.addEventListener('touchend',()=>draw=false)}
-function lAss(id){const cv=document.getElementById(id);if(cv)cv.getContext('2d').clearRect(0,0,cv.width,cv.height)}
-function sAss(cid,dk,ok){const cv=document.getElementById(cid);if(!cv)return;window[dk]=cv.toDataURL();const av=document.getElementById(ok);if(av){av.style.display='block';setTimeout(()=>av.style.display='none',3000)}agS();toast('Assinatura salva!','ok')}
-
-// RADIO/CHECKBOX VISUAL
-document.addEventListener('change',e=>{const el=e.target;if(el.type==='radio')document.querySelectorAll('input[name="'+el.name+'"]').forEach(r=>r.closest('.op,.lk')?.classList.toggle('s2',r.checked));if(el.type==='checkbox')el.closest('.op')?.classList.toggle('s2',el.checked)});
-
-// INIT
-async function init(){
-  try{
-    await aDB();updCx();await updSt();
-
-    // Bindings — window.X garante referência correta em qualquer ambiente
-    document.getElementById('bn-novo').addEventListener('click',window.abrNovo);
-    document.getElementById('bn-novo-res').addEventListener('click',window.abrNovo);
-    document.getElementById('bn-iniciar').addEventListener('click',window.iniciar);
-    document.getElementById('bn-cancel-novo').addEventListener('click',()=>window.fchD('novo'));
-    document.getElementById('bn-sair').addEventListener('click',window.sair);
-    document.getElementById('bn-cancel-sair').addEventListener('click',()=>window.fchD('sair'));
-    document.getElementById('bn-conf-sair').addEventListener('click',()=>{window.fchD('sair');window.irT('tela-lista')});
-    document.getElementById('bn-conf-excl').addEventListener('click',window.confX);
-    document.getElementById('bn-cancel-excl').addEventListener('click',()=>window.fchD('excl'));
-    // Fechar drawers ao clicar no fundo
-    ['novo','excl','sair'].forEach(id=>{document.getElementById('bg-'+id).addEventListener('click',()=>window.fchD(id))});
-
-    console.log('[Campo Hídrico] v2 OK ✅');
-  }catch(e){console.error(e);toast('Erro ao iniciar. Recarregue a página.','err')}
+function agora()  { return new Date().toISOString(); }
+function fmtData(s) {
+  if (!s) return '---';
+  var d = new Date(s);
+  return d.toLocaleDateString('pt-BR') + ' ' +
+    d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
 }
 
-window.addEventListener('beforeunload',()=>{if(document.getElementById('tela-form')?.classList.contains('ativa'))salva()});
-document.addEventListener('DOMContentLoaded',init);
+// ── TOAST ────────────────────────────────────────────────────
+var toastTimer = null;
+function mostrarToast(msg, tipo) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (tipo || '');
+  clearTimeout(toastTimer);
+  setTimeout(function() { el.classList.add('vis'); }, 10);
+  toastTimer = setTimeout(function() { el.classList.remove('vis'); }, 3000);
+}
 
-// Aliases globais para onclick inline no HTML
-window.nBloco=nBloco;window.sair=sair;window.selSt=selSt;
-window.abrQ=abrQ;window.dupQ=dupQ;window.pedX=pedX;window.confX=confX;
-window.expI=expI;window.expT=expT;window.eUm=eUm;window.pImp=pImp;
-window.cGeo=cGeo;window.pFoto=pFoto;window.lAss=lAss;window.sAss=sAss;
-window.rLista=rLista;window.toast=toast;
+// ── CONEXAO ──────────────────────────────────────────────────
+function atualizarConexao() {
+  var b = document.getElementById('bcx');
+  var t = document.getElementById('tcx');
+  if (navigator.onLine) { b.className = 'bcx on'; t.textContent = 'Online'; }
+  else                  { b.className = 'bcx off'; t.textContent = 'Offline'; }
+}
+
+// ── TELAS ────────────────────────────────────────────────────
+function irTela(id) {
+  var telas = document.querySelectorAll('.tela');
+  for (var i = 0; i < telas.length; i++) telas[i].classList.remove('ativa');
+  document.getElementById(id).classList.add('ativa');
+  window.scrollTo(0, 0);
+  if (id === 'tela-home')   atualizarStats();
+  if (id === 'tela-lista')  renderLista();
+  if (id === 'tela-res')    renderResumo();
+}
+
+// ── STATS ────────────────────────────────────────────────────
+async function atualizarStats() {
+  var lista = await dbAll();
+  var hoje  = new Date().toDateString();
+  document.getElementById('st0').textContent = lista.length;
+  document.getElementById('st1').textContent = lista.filter(function(q) {
+    return q.status === 'concluido' || q.status === 'enviado';
+  }).length;
+  document.getElementById('st2').textContent = lista.filter(function(q) {
+    return new Date(q.dataCriacao).toDateString() === hoje;
+  }).length;
+}
+
+// ── DRAWER ───────────────────────────────────────────────────
+function abrirDrawer(id) {
+  document.getElementById('bg-' + id).style.display = 'block';
+  var dr = document.getElementById('dr-' + id);
+  dr.style.display = 'block';
+  dr.classList.add('open');
+}
+function fecharDrawer(id) {
+  document.getElementById('bg-' + id).style.display = 'none';
+  document.getElementById('dr-' + id).style.display = 'none';
+}
+
+// ── NOVO FORM ────────────────────────────────────────────────
+function abrirNovo() {
+  tipoSel = 'agricultor';
+  document.getElementById('tc-a').classList.add('s3');
+  document.getElementById('tc-e').classList.remove('s3');
+  abrirDrawer('novo');
+}
+function selecionarTipo(t) {
+  tipoSel = t;
+  document.getElementById('tc-a').classList.toggle('s3', t === 'agricultor');
+  document.getElementById('tc-e').classList.toggle('s3', t === 'extensionista');
+}
+async function iniciarForm() {
+  fecharDrawer('novo');
+  formAtual = {
+    id: genId(tipoSel), tipo: tipoSel, status: 'rascunho',
+    dataCriacao: agora(), dataEdicao: agora(),
+    blocoAtual: 0, respostas: {},
+    municipio: '', comunidade: '', entrevistador: '',
+    fotoData: null, assData: null
+  };
+  await dbPut(formAtual);
+  abrirForm();
+}
+
+// ── ABRIR FORM ───────────────────────────────────────────────
+function abrirForm(f) {
+  if (f) formAtual = f;
+  var t = formAtual.tipo;
+  document.getElementById('ga').style.display = (t === 'agricultor') ? 'block' : 'none';
+  document.getElementById('ge').style.display = (t === 'extensionista') ? 'block' : 'none';
+  var badge = document.getElementById('fbg');
+  badge.textContent = (t === 'agricultor') ? 'Agricultor Familiar' : 'Tecnico Extensionista';
+  badge.className   = 'fbg ' + (t === 'agricultor' ? 'ta' : 'te');
+  document.getElementById('fid').textContent = 'ID: ' + formAtual.id;
+  blocoAt = formAtual.blocoAtual || 0;
+
+  // Etapas
+  var bs  = (t === 'agricultor') ? BLOCOS_AGR : BLOCOS_EXT;
+  var nav = document.getElementById('enav');
+  nav.innerHTML = '';
+  for (var i = 0; i < bs.length; i++) {
+    (function(idx) {
+      var btn = document.createElement('button');
+      btn.className = 'eb' + (idx === blocoAt ? ' at' : '');
+      btn.textContent = bs[idx];
+      btn.onclick = function() { salvarForm(); blocoAt = idx; mostrarBloco(); };
+      nav.appendChild(btn);
+    })(i);
+  }
+  preencherForm(t, formAtual.respostas || {});
+  setTimeout(function() {
+    iniciarCanvas(t === 'agricultor' ? 'cv-a' : 'cv-e');
+  }, 200);
+  mostrarBloco();
+  registrarAutosave(t);
+  irTela('tela-form');
+}
+
+function mostrarBloco() {
+  var t = formAtual.tipo;
+  var p = (t === 'agricultor') ? 'a' : 'e';
+  for (var i = 0; i < 8; i++) {
+    var el = document.getElementById(p + i);
+    if (el) el.classList.remove('at');
+  }
+  var ativo = document.getElementById(p + blocoAt);
+  if (ativo) {
+    ativo.classList.add('at');
+    setTimeout(function() { ativo.scrollIntoView({behavior:'smooth', block:'start'}); }, 60);
+  }
+  var etapas = document.querySelectorAll('.eb');
+  for (var j = 0; j < etapas.length; j++)
+    etapas[j].classList.toggle('at', j === blocoAt);
+
+  var pct = Math.round((blocoAt / 7) * 100);
+  document.getElementById('pbr').style.width  = pct + '%';
+  document.getElementById('ppct').textContent = pct + '%';
+  document.getElementById('btxt').textContent = 'Bloco ' + (blocoAt + 1) + ' de 8';
+  document.getElementById('bn-vt').style.visibility = blocoAt === 0 ? 'hidden' : 'visible';
+  var btnAv = document.getElementById('bn-av');
+  if (blocoAt === 7) { btnAv.textContent = 'Concluir'; btnAv.className = 'bnav fn'; }
+  else               { btnAv.textContent = 'Avancar ->'; btnAv.className = 'bnav av'; }
+  window.scrollTo(0, 0);
+}
+
+function navegarBloco(d) {
+  salvarForm();
+  if (blocoAt + d < 0) return;
+  if (blocoAt + d >= 8) { irTela('tela-res'); return; }
+  blocoAt += d;
+  mostrarBloco();
+}
+
+// ── AUTOSAVE ─────────────────────────────────────────────────
+function registrarAutosave(t) {
+  var grp = document.getElementById(t === 'agricultor' ? 'ga' : 'ge');
+  var campos = grp.querySelectorAll('input, textarea, select');
+  for (var i = 0; i < campos.length; i++) {
+    campos[i].addEventListener('input',  agendarSave);
+    campos[i].addEventListener('change', agendarSave);
+  }
+}
+function agendarSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(salvarForm, 800);
+}
+async function salvarForm() {
+  if (!formAtual || !db) return;
+  var t = formAtual.tipo;
+  var p = (t === 'agricultor') ? 'a' : 'e';
+  var r = coletarRespostas(t);
+  formAtual.entrevistador = r['entrev'] || '';
+  formAtual.municipio     = r['mun']    || '';
+  formAtual.comunidade    = r['com']    || '';
+  formAtual.respostas     = r;
+  formAtual.blocoAtual    = blocoAt;
+  formAtual.dataEdicao    = agora();
+  if (window['fd-' + p]) formAtual.fotoData = window['fd-' + p];
+  if (window['ad-' + p]) formAtual.assData  = window['ad-' + p];
+  await dbPut(formAtual);
+}
+
+// ── COLETAR RESPOSTAS ────────────────────────────────────────
+function coletarRespostas(t) {
+  var p   = (t === 'agricultor') ? 'a' : 'e';
+  var grp = document.getElementById(t === 'agricultor' ? 'ga' : 'ge');
+  var r   = {};
+  var campos = grp.querySelectorAll('input[type=text], input[type=number], textarea, select');
+  for (var i = 0; i < campos.length; i++) {
+    var el = campos[i];
+    if (el.id && el.id.indexOf(p + '-') === 0)
+      r[el.id.slice(p.length + 1)] = el.value.trim();
+  }
+  var radios = grp.querySelectorAll('input[type=radio]:checked');
+  for (var i = 0; i < radios.length; i++) {
+    var key = radios[i].name.slice(p.length + 1);
+    r[key] = radios[i].value;
+  }
+  var cbMap = {};
+  var cbs = grp.querySelectorAll('input[type=checkbox]');
+  for (var i = 0; i < cbs.length; i++) {
+    var key = cbs[i].name.slice(p.length + 1);
+    if (!cbMap[key]) cbMap[key] = [];
+    if (cbs[i].checked) cbMap[key].push(cbs[i].value);
+  }
+  for (var k in cbMap) r[k] = cbMap[k];
+  return r;
+}
+
+// ── PREENCHER ────────────────────────────────────────────────
+function preencherForm(t, resp) {
+  if (!resp || !Object.keys(resp).length) return;
+  var p   = (t === 'agricultor') ? 'a' : 'e';
+  var grp = document.getElementById(t === 'agricultor' ? 'ga' : 'ge');
+  for (var k in resp) {
+    var v  = resp[k];
+    var el = document.getElementById(p + '-' + k);
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
+      el.value = v; continue;
+    }
+    if (typeof v === 'string') {
+      var rds = grp.querySelectorAll('input[type=radio][name="' + p + '-' + k + '"]');
+      for (var i = 0; i < rds.length; i++) {
+        rds[i].checked = (rds[i].value === v);
+        if (rds[i].checked) { var par = rds[i].closest('.op,.lk'); if (par) par.classList.add('s2'); }
+      }
+    }
+    if (Array.isArray(v)) {
+      var cbs = grp.querySelectorAll('input[type=checkbox][name="' + p + '-' + k + '"]');
+      for (var i = 0; i < cbs.length; i++) {
+        cbs[i].checked = (v.indexOf(cbs[i].value) >= 0);
+        if (cbs[i].checked) { var par = cbs[i].closest('.op'); if (par) par.classList.add('s2'); }
+      }
+    }
+  }
+}
+
+// ── SAIR DO FORM ─────────────────────────────────────────────
+function sairForm() { salvarForm(); abrirDrawer('sair'); }
+
+// ── LISTA ────────────────────────────────────────────────────
+async function renderLista() {
+  var lista = await dbAll();
+  var txt = (document.getElementById('busca').value || '').toLowerCase();
+  var ft  = document.getElementById('ft').value;
+  var fs  = document.getElementById('fs').value;
+  if (txt) lista = lista.filter(function(q) {
+    return [q.id, q.municipio, q.comunidade, q.entrevistador].join(' ').toLowerCase().indexOf(txt) >= 0;
+  });
+  if (ft) lista = lista.filter(function(q) { return q.tipo === ft; });
+  if (fs) lista = lista.filter(function(q) { return q.status === fs; });
+  lista.sort(function(a, b) { return new Date(b.dataEdicao) - new Date(a.dataEdicao); });
+  var cont = document.getElementById('lc');
+  if (!lista.length) {
+    cont.innerHTML = '<div class="lv"><div class="iv">&#128203;</div><p>Nenhum questionario encontrado.</p></div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < lista.length; i++) {
+    var q  = lista[i];
+    var tl = q.tipo === 'agricultor' ? 'Agricultor' : 'Extensionista';
+    var lo = [q.municipio, q.comunidade].filter(Boolean).join(' / ') || 'Local nao informado';
+    var pr = calcularProgresso(q);
+    var sc = {rascunho:'r', incompleto:'i', concluido:'c2', enviado:'e'}[q.status] || 'r';
+    html += '<div class="cq s' + sc + '">'
+      + '<div class="cqt"><span class="cqid">' + q.id + '</span><span class="bst ' + q.status + '">' + q.status + '</span></div>'
+      + '<div class="cqn">' + tl + ' - ' + lo + '</div>'
+      + '<div class="cqm"><span>' + fmtData(q.dataEdicao) + '</span><span>' + (q.entrevistador || 'Sem nome') + '</span></div>'
+      + '<div class="mp"><div class="mpb" style="width:' + pr + '%"></div></div>'
+      + '<div class="cqa">'
+      + '<button class="bm ab" onclick="abrirQuestionario(\'' + q.id + '\')">Editar</button>'
+      + '<button class="bm dp" onclick="duplicarQ(\'' + q.id + '\')">Dup</button>'
+      + '<button class="bm ep" onclick="exportarUm(\'' + q.id + '\',\'json\')">JSON</button>'
+      + '<button class="bm ep" onclick="exportarUm(\'' + q.id + '\',\'csv\')">CSV</button>'
+      + '<button class="bm ex" onclick="pedirExcluir(\'' + q.id + '\')">X</button>'
+      + '</div></div>';
+  }
+  cont.innerHTML = html;
+}
+function calcularProgresso(q) {
+  var r = q.respostas || {};
+  var tot = q.tipo === 'agricultor' ? 23 : 21;
+  var p = Object.values(r).filter(function(v) {
+    return (typeof v === 'string' && v.trim()) || (Array.isArray(v) && v.length);
+  }).length;
+  return Math.min(100, Math.round(p / tot * 100));
+}
+async function abrirQuestionario(id) {
+  var q = await dbGet(id);
+  if (q) { formAtual = q; tipoSel = q.tipo; abrirForm(q); }
+}
+async function duplicarQ(id) {
+  var q = await dbGet(id);
+  if (!q) return;
+  var n = JSON.parse(JSON.stringify(q));
+  n.id = genId(n.tipo); n.dataCriacao = agora(); n.dataEdicao = agora(); n.status = 'rascunho';
+  await dbPut(n);
+  mostrarToast('Duplicado!', 'ok'); renderLista();
+}
+function pedirExcluir(id) { idExcluir = id; abrirDrawer('excl'); }
+async function confirmarExcluir() {
+  fecharDrawer('excl');
+  if (!idExcluir) return;
+  await dbDel(idExcluir); idExcluir = null;
+  mostrarToast('Excluido.', 'av'); renderLista(); atualizarStats();
+}
+
+// ── RESUMO ────────────────────────────────────────────────────
+async function renderResumo() {
+  if (!formAtual) return;
+  try { var f = await dbGet(formAtual.id); if (f) formAtual = f; } catch(e) {}
+  document.getElementById('rid').textContent = 'ID: ' + formAtual.id + ' | ' + fmtData(formAtual.dataCriacao);
+  document.querySelectorAll('.sop').forEach(function(e) { e.className = 'sop'; });
+  selecionarStatus(formAtual.status || 'rascunho', false);
+  var r   = formAtual.respostas || {};
+  var div = document.getElementById('rc');
+  var its = [];
+  for (var k in r) {
+    var v = r[k];
+    if (v && ((typeof v === 'string' && v.trim()) || (Array.isArray(v) && v.length))) {
+      var vt = Array.isArray(v) ? v.join(', ') : String(v);
+      its.push('<div class="rit"><span class="rp">' + k + ':</span><span class="rr">' + vt.substring(0, 200) + '</span></div>');
+    }
+  }
+  div.innerHTML = its.length ? its.join('') : '<p style="font-size:.85rem;color:var(--c2)">Sem respostas ainda.</p>';
+}
+function selecionarStatus(s, salvar) {
+  document.querySelectorAll('.sop').forEach(function(e) {
+    e.className = 'sop' + (e.dataset.s === s ? ' a-' + s : '');
+  });
+  if (formAtual) {
+    formAtual.status = s;
+    if (salvar !== false) dbPut(formAtual).catch(function(){});
+  }
+}
+
+// ── EXPORTACAO ───────────────────────────────────────────────
+function exportarIndividual(fmt) {
+  if (!formAtual) return;
+  salvarForm();
+  if (fmt === 'json') baixarJSON([formAtual], 'form-' + formAtual.id);
+  else                baixarCSV ([formAtual], 'form-' + formAtual.id);
+}
+function exportarUm(id, fmt) {
+  dbGet(id).then(function(q) {
+    if (!q) return;
+    if (fmt === 'json') baixarJSON([q], 'form-' + id);
+    else                baixarCSV ([q], 'form-' + id);
+  });
+}
+async function exportarTodos(fmt) {
+  var lista = await dbAll();
+  if (!lista.length) { mostrarToast('Sem dados para exportar.', 'av'); return; }
+  var d = new Date().toISOString().slice(0, 10);
+  if (fmt === 'json') baixarJSON(lista, 'backup-' + d);
+  else                baixarCSV (lista, 'planilha-' + d);
+  mostrarToast('Exportados: ' + lista.length + ' registros', 'ok');
+}
+function baixarJSON(data, nome) {
+  var b = new Blob([JSON.stringify({app:'Campo Hidrico v3', exportado:agora(), total:data.length, dados:data}, null, 2)], {type:'application/json'});
+  _download(b, nome + '.json');
+}
+function baixarCSV(data, nome) {
+  if (!data.length) return;
+  var fix = ['id','tipo','status','dataCriacao','dataEdicao','entrevistador','municipio','comunidade'];
+  var rk  = new Set();
+  data.forEach(function(q) { Object.keys(q.respostas || {}).forEach(function(k) { rk.add(k); }); });
+  var cols = fix.concat(Array.from(rk));
+  var rows = data.map(function(q) {
+    return cols.map(function(c) {
+      var v = fix.indexOf(c) >= 0 ? (q[c] || '') : ((q.respostas || {})[c] || '');
+      if (Array.isArray(v)) v = v.join(' | ');
+      return '"' + String(v).replace(/"/g, '""').replace(/\n/g, ' ') + '"';
+    }).join(',');
+  });
+  _download(new Blob(['\uFEFF' + [cols.join(',')].concat(rows).join('\n')], {type:'text/csv;charset=utf-8;'}), nome + '.csv');
+}
+function _download(blob, nome) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// ── IMPORTACAO ───────────────────────────────────────────────
+async function processarImportacao(inp) {
+  if (!inp.files || !inp.files[0]) return;
+  try {
+    var txt  = await inp.files[0].text();
+    var json = JSON.parse(txt);
+    var lista = json.dados || json;
+    if (!Array.isArray(lista)) { mostrarToast('Arquivo invalido.', 'err'); return; }
+    var n = 0;
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i] && lista[i].id) { await dbPut(lista[i]); n++; }
+    }
+    mostrarToast(n + ' registros importados!', 'ok');
+    atualizarStats(); inp.value = '';
+  } catch(e) { mostrarToast('Erro ao importar.', 'err'); }
+}
+
+// ── GEO ──────────────────────────────────────────────────────
+function capturarGeo(id) {
+  if (!navigator.geolocation) { mostrarToast('GPS nao disponivel.', 'av'); return; }
+  mostrarToast('Capturando localizacao...', '');
+  navigator.geolocation.getCurrentPosition(
+    function(p) {
+      var el = document.getElementById(id);
+      if (el) { el.value = p.coords.latitude.toFixed(6) + ', ' + p.coords.longitude.toFixed(6); agendarSave(); }
+      mostrarToast('Localizacao capturada!', 'ok');
+    },
+    function() { mostrarToast('GPS indisponivel. Insira manualmente.', 'av'); },
+    {enableHighAccuracy: true, timeout: 10000}
+  );
+}
+
+// ── FOTO ─────────────────────────────────────────────────────
+function processarFoto(inp, prevId, dataKey) {
+  if (!inp.files || !inp.files[0]) return;
+  var r = new FileReader();
+  r.onload = function(e) {
+    window[dataKey] = e.target.result;
+    var img = document.getElementById(prevId);
+    if (img) { img.src = e.target.result; img.style.display = 'block'; }
+    agendarSave(); mostrarToast('Foto salva!', 'ok');
+  };
+  r.readAsDataURL(inp.files[0]);
+}
+
+// ── CANVAS ───────────────────────────────────────────────────
+function iniciarCanvas(id) {
+  var cv = document.getElementById(id);
+  if (!cv) return;
+  var rc  = cv.getBoundingClientRect();
+  var dpr = window.devicePixelRatio || 1;
+  cv.width  = rc.width  * dpr;
+  cv.height = rc.height * dpr;
+  var ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#1a2740';
+  var drawing = false;
+  function pos(e) {
+    var r = cv.getBoundingClientRect();
+    return e.touches
+      ? {x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top}
+      : {x: e.clientX - r.left, y: e.clientY - r.top};
+  }
+  cv.addEventListener('mousedown',  function(e) { drawing = true; ctx.beginPath(); var p = pos(e); ctx.moveTo(p.x, p.y); });
+  cv.addEventListener('mousemove',  function(e) { if (!drawing) return; var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+  cv.addEventListener('mouseup',    function() { drawing = false; });
+  cv.addEventListener('mouseleave', function() { drawing = false; });
+  cv.addEventListener('touchstart', function(e) { e.preventDefault(); drawing = true; ctx.beginPath(); var p = pos(e); ctx.moveTo(p.x, p.y); }, {passive: false});
+  cv.addEventListener('touchmove',  function(e) { e.preventDefault(); if (!drawing) return; var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }, {passive: false});
+  cv.addEventListener('touchend',   function() { drawing = false; });
+}
+function limparAssinatura(id) {
+  var cv = document.getElementById(id);
+  if (cv) cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+}
+function salvarAssinatura(cvId, dataKey, avisoId) {
+  var cv = document.getElementById(cvId);
+  if (!cv) return;
+  window[dataKey] = cv.toDataURL();
+  var av = document.getElementById(avisoId);
+  if (av) { av.style.display = 'block'; setTimeout(function() { av.style.display = 'none'; }, 3000); }
+  agendarSave(); mostrarToast('Assinatura salva!', 'ok');
+}
+
+// ── RADIO/CHECKBOX VISUAL ────────────────────────────────────
+document.addEventListener('change', function(e) {
+  var el = e.target;
+  if (el.type === 'radio') {
+    var group = document.querySelectorAll('input[name="' + el.name + '"]');
+    for (var i = 0; i < group.length; i++) {
+      var par = group[i].closest('.op,.lk');
+      if (par) par.classList.toggle('s2', group[i].checked);
+    }
+  }
+  if (el.type === 'checkbox') {
+    var par = el.closest('.op');
+    if (par) par.classList.toggle('s2', el.checked);
+  }
+});
+
+// ── INIT ─────────────────────────────────────────────────────
+async function init() {
+  try {
+    await abrirDB();
+    atualizarConexao();
+    await atualizarStats();
+
+    // Botoes criticos — binding direto sem window.X
+    document.getElementById('bn-novo').onclick     = abrirNovo;
+    document.getElementById('bn-novo-res').onclick = abrirNovo;
+    document.getElementById('bn-iniciar').onclick  = iniciarForm;
+    document.getElementById('bn-cancel-novo').onclick = function() { fecharDrawer('novo'); };
+    document.getElementById('bn-sair').onclick        = sairForm;
+    document.getElementById('bn-cancel-sair').onclick = function() { fecharDrawer('sair'); };
+    document.getElementById('bn-conf-sair').onclick   = function() { fecharDrawer('sair'); irTela('tela-lista'); };
+    document.getElementById('bn-conf-excl').onclick   = confirmarExcluir;
+    document.getElementById('bn-cancel-excl').onclick = function() { fecharDrawer('excl'); };
+    document.getElementById('bg-novo').onclick = function() { fecharDrawer('novo'); };
+    document.getElementById('bg-excl').onclick = function() { fecharDrawer('excl'); };
+    document.getElementById('bg-sair').onclick = function() { fecharDrawer('sair'); };
+    document.getElementById('bn-vt').onclick = function() { navegarBloco(-1); };
+    document.getElementById('bn-av').onclick = function() { navegarBloco(1); };
+
+    window.addEventListener('online',  atualizarConexao);
+    window.addEventListener('offline', atualizarConexao);
+    console.log('[Campo Hidrico] v3 OK');
+  } catch(e) {
+    console.error('[Campo Hidrico] Erro init:', e);
+    mostrarToast('Erro ao iniciar. Recarregue a pagina.', 'err');
+  }
+}
+
+window.addEventListener('beforeunload', function() { salvarForm(); });
+document.addEventListener('DOMContentLoaded', init);
 </script>
+
 </body>
 </html>
