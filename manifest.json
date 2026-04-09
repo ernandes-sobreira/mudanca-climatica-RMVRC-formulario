@@ -1,0 +1,26 @@
+{
+  "name": "Campo Hídrico — Coleta de Dados",
+  "short_name": "Campo Hídrico",
+  "description": "App offline para coleta de dados sobre escassez hídrica e agricultura familiar",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f7f4",
+  "theme_color": "#1a6b4a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%231a6b4a'/%3E%3Cpath d='M96 40 C96 40 60 80 60 110 C60 130 76 148 96 148 C116 148 132 130 132 110 C132 80 96 40 96 40Z' fill='%2363c5a0'/%3E%3Cpath d='M96 60 C96 60 72 92 72 110 C72 123 83 134 96 134 C109 134 120 123 120 110 C120 92 96 60 96 60Z' fill='white' opacity='0.6'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%231a6b4a'/%3E%3Cpath d='M256 90 C256 90 160 200 160 280 C160 336 202 384 256 384 C310 384 352 336 352 280 C352 200 256 90 256 90Z' fill='%2363c5a0'/%3E%3Cpath d='M256 140 C256 140 184 230 184 280 C184 319 217 350 256 350 C295 350 328 319 328 280 C328 230 256 140 256 140Z' fill='white' opacity='0.6'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "pt-BR"
+}

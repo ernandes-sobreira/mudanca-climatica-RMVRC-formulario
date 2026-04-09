@@ -1,0 +1,2821 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a6b4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Campo Hídrico">
+<title>Campo Hídrico — Coleta de Dados</title>
+<link rel="manifest" href="manifest.json">
+
+<style>
+/* ============================================================
+   VARIÁVEIS E RESET
+   ============================================================ */
+:root {
+  --verde-escuro:  #1a6b4a;
+  --verde-medio:   #2d8f65;
+  --verde-claro:   #63c5a0;
+  --verde-suave:   #e8f5ef;
+  --azul-escuro:   #1a4a7a;
+  --azul-medio:    #2d6ba8;
+  --azul-claro:    #7ab8e8;
+  --azul-suave:    #e8f2fb;
+  --amarelo:       #f0a500;
+  --laranja:       #e07b2a;
+  --vermelho:      #d94040;
+  --cinza-escuro:  #2c3e50;
+  --cinza-medio:   #7f8c8d;
+  --cinza-claro:   #ecf0f1;
+  --cinza-suave:   #f8f9fa;
+  --branco:        #ffffff;
+  --sombra-suave:  0 2px 12px rgba(0,0,0,0.08);
+  --sombra-media:  0 4px 20px rgba(0,0,0,0.14);
+  --raio:          12px;
+  --raio-grande:   20px;
+  --raio-pequeno:  8px;
+  --fonte-titulo:  'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --fonte-corpo:   'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--fonte-corpo);
+  background: #f0f7f4;
+  color: var(--cinza-escuro);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+img { max-width: 100%; }
+
+/* ============================================================
+   LAYOUT PRINCIPAL
+   ============================================================ */
+#app {
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  background: #f0f7f4;
+}
+
+/* ── Topo fixo ─────────────────────────────────────────────── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--verde-escuro);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.app-header h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-header h1 .icone-agua { font-size: 1.3rem; }
+
+/* Badge online/offline */
+.badge-conexao {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  transition: all 0.3s;
+}
+.badge-conexao.offline {
+  background: rgba(255,255,255,0.18);
+  color: #ffe;
+}
+.badge-conexao.online {
+  background: rgba(100,255,160,0.25);
+  color: #b0ffcc;
+}
+.dot-conexao {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.offline .dot-conexao { background: #ffcc44; }
+.online  .dot-conexao { background: #44ff88; }
+
+/* ── Conteúdo principal ────────────────────────────────────── */
+.tela {
+  display: none;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+.tela.ativa { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   TELA INICIAL (HOME)
+   ============================================================ */
+.home-hero {
+  background: linear-gradient(135deg, var(--verde-escuro) 0%, var(--azul-escuro) 100%);
+  color: white;
+  border-radius: var(--raio-grande);
+  padding: 28px 24px 24px;
+  margin-bottom: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.home-hero::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 50%;
+}
+.home-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -20px; left: -20px;
+  width: 80px; height: 80px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+.home-hero .icone-grande { font-size: 3rem; margin-bottom: 8px; }
+.home-hero h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.home-hero p {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: white;
+  border-radius: var(--raio);
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: var(--sombra-suave);
+}
+.stat-card .stat-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--verde-escuro);
+  line-height: 1;
+}
+.stat-card .stat-label {
+  font-size: 0.7rem;
+  color: var(--cinza-medio);
+  margin-top: 3px;
+  line-height: 1.3;
+}
+
+.secao-titulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--cinza-medio);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+
+/* Botões de ação principais */
+.grid-acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.btn-acao {
+  background: white;
+  border-radius: var(--raio);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--sombra-suave);
+  transition: all 0.18s;
+  text-decoration: none;
+  color: var(--cinza-escuro);
+  border: 2px solid transparent;
+}
+.btn-acao:active { transform: scale(0.96); }
+.btn-acao .icone { font-size: 1.8rem; }
+.btn-acao .texto {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+}
+.btn-acao.destaque {
+  background: linear-gradient(135deg, var(--verde-escuro), var(--verde-medio));
+  color: white;
+  grid-column: span 2;
+  flex-direction: row;
+  padding: 18px 20px;
+  justify-content: center;
+  gap: 12px;
+}
+.btn-acao.destaque .texto { font-size: 1rem; font-weight: 700; }
+.btn-acao.azul { border-color: var(--azul-suave); }
+.btn-acao.azul .icone { color: var(--azul-medio); }
+.btn-acao.verde { border-color: var(--verde-suave); }
+.btn-acao.verde .icone { color: var(--verde-medio); }
+
+/* Aviso de segurança */
+.aviso-dados {
+  background: linear-gradient(135deg, #fff8e6, #fff3d0);
+  border-left: 4px solid var(--amarelo);
+  border-radius: var(--raio);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.aviso-dados p {
+  font-size: 0.8rem;
+  color: #7a5500;
+  line-height: 1.5;
+}
+.aviso-dados p + p { margin-top: 5px; }
+.aviso-dados strong { color: #5a3d00; }
+
+/* ============================================================
+   TELA — LISTA DE QUESTIONÁRIOS
+   ============================================================ */
+.filtros-barra {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.input-busca {
+  flex: 1;
+  min-width: 160px;
+  padding: 10px 14px;
+  border: 2px solid var(--cinza-claro);
+  border-radius: var(--raio);
+  font-size: 0.9rem;
+  background: white;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-busca:focus { border-color: var(--verde-claro); }
+
+.select-filtro {
+  padding: 10px 12px;
+  border: 2px solid var(--cinza-claro);
+  border-radius: var(--raio);
+  font-size: 0.82rem;
+  background: white;
+  outline: none;
+  color: var(--cinza-escuro);
+  cursor: pointer;
+}
+.select-filtro:focus { border-color: var(--verde-claro); }
+
+.lista-questionarios { display: flex; flex-direction: column; gap: 10px; }
+
+.card-questionario {
+  background: white;
+  border-radius: var(--raio);
+  padding: 14px 16px;
+  box-shadow: var(--sombra-suave);
+  border-left: 4px solid var(--cinza-claro);
+  transition: all 0.18s;
+}
+.card-questionario:active { transform: scale(0.99); }
+.card-questionario.status-rascunho      { border-left-color: var(--cinza-medio); }
+.card-questionario.status-incompleto    { border-left-color: var(--amarelo); }
+.card-questionario.status-concluido     { border-left-color: var(--verde-claro); }
+.card-questionario.status-enviado       { border-left-color: var(--azul-claro); }
+
+.card-q-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+.card-q-id {
+  font-size: 0.72rem;
+  color: var(--cinza-medio);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.badge-status {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.badge-status.rascunho   { background: #eee; color: #666; }
+.badge-status.incompleto { background: #fff3cd; color: #856404; }
+.badge-status.concluido  { background: #d4edda; color: #155724; }
+.badge-status.enviado    { background: #d1ecf1; color: #0c5460; }
+
+.card-q-nome {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cinza-escuro);
+  margin-bottom: 4px;
+}
+.card-q-meta {
+  font-size: 0.78rem;
+  color: var(--cinza-medio);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.card-q-meta span { display: flex; align-items: center; gap: 3px; }
+
+/* Barra de progresso mini */
+.mini-progresso {
+  height: 4px;
+  background: var(--cinza-claro);
+  border-radius: 2px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.mini-progresso-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--verde-claro), var(--verde-medio));
+  border-radius: 2px;
+  transition: width 0.5s;
+}
+
+.card-q-acoes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.btn-mini {
+  padding: 6px 12px;
+  border-radius: var(--raio-pequeno);
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.btn-mini:active { transform: scale(0.95); }
+.btn-mini.abrir   { background: var(--verde-suave); color: var(--verde-escuro); }
+.btn-mini.editar  { background: var(--azul-suave); color: var(--azul-escuro); }
+.btn-mini.dup     { background: #f3f3f3; color: #555; }
+.btn-mini.excluir { background: #fdecea; color: var(--vermelho); }
+.btn-mini.exp     { background: #f0f7ff; color: var(--azul-medio); }
+
+.lista-vazia {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--cinza-medio);
+}
+.lista-vazia .icone-vazio { font-size: 3rem; margin-bottom: 12px; }
+.lista-vazia p { font-size: 0.9rem; line-height: 1.5; }
+
+/* ============================================================
+   TELA — FORMULÁRIO
+   ============================================================ */
+.form-cabecalho {
+  background: white;
+  border-radius: var(--raio);
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--sombra-suave);
+}
+.form-tipo-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tipo-agricultor  { background: var(--verde-suave);  color: var(--verde-escuro); }
+.tipo-extensionista { background: var(--azul-suave);  color: var(--azul-escuro); }
+
+.form-id-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.form-id-texto { font-size: 0.78rem; color: var(--cinza-medio); }
+.autosave-indicador {
+  font-size: 0.72rem;
+  color: var(--verde-medio);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.autosave-indicador .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--verde-claro);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* Barra de progresso do formulário */
+.barra-progresso-wrapper {
+  margin-bottom: 6px;
+}
+.barra-progresso-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--cinza-medio);
+  margin-bottom: 4px;
+}
+.barra-progresso {
+  height: 8px;
+  background: var(--cinza-claro);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.barra-progresso-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--verde-claro), var(--verde-medio));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* Etapas (blocos) */
+.etapas-nav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 16px;
+  scrollbar-width: none;
+}
+.etapas-nav::-webkit-scrollbar { display: none; }
+.etapa-btn {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--cinza-claro);
+  color: var(--cinza-medio);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.etapa-btn.ativa    { background: var(--verde-escuro); color: white; }
+.etapa-btn.completa { background: var(--verde-suave); color: var(--verde-escuro); }
+.etapa-btn.parcial  { background: #fff3cd; color: #856404; }
+
+/* Bloco de campos */
+.bloco-form {
+  background: white;
+  border-radius: var(--raio);
+  padding: 18px 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--sombra-suave);
+  display: none;
+}
+.bloco-form.ativo { display: block; animation: fadeIn 0.2s ease; }
+
+.bloco-titulo {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--verde-escuro);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--verde-suave);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bloco-titulo .num {
+  width: 26px; height: 26px;
+  background: var(--verde-escuro);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* Campos do formulário */
+.campo-grupo {
+  margin-bottom: 16px;
+}
+.campo-label {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--cinza-escuro);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.campo-label .num-pergunta {
+  color: var(--verde-medio);
+  font-size: 0.78rem;
+  margin-right: 4px;
+}
+.campo-label .obrigatorio { color: var(--vermelho); margin-left: 2px; }
+
+.campo-input,
+.campo-textarea,
+.campo-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--cinza-claro);
+  border-radius: var(--raio);
+  font-size: 0.9rem;
+  background: var(--cinza-suave);
+  color: var(--cinza-escuro);
+  outline: none;
+  transition: all 0.2s;
+  -webkit-appearance: none;
+}
+.campo-input:focus,
+.campo-textarea:focus,
+.campo-select:focus {
+  border-color: var(--verde-claro);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(99,197,160,0.15);
+}
+.campo-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+.campo-select { cursor: pointer; }
+
+/* Radio e Checkbox customizados */
+.opcoes-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.opcao-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 2px solid var(--cinza-claro);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--cinza-suave);
+}
+.opcao-item:active { transform: scale(0.98); }
+.opcao-item.selecionada {
+  border-color: var(--verde-claro);
+  background: var(--verde-suave);
+}
+.opcao-item input[type="radio"],
+.opcao-item input[type="checkbox"] {
+  width: 18px; height: 18px;
+  accent-color: var(--verde-escuro);
+  flex-shrink: 0;
+  margin-top: 1px;
+  cursor: pointer;
+}
+.opcao-texto {
+  font-size: 0.87rem;
+  line-height: 1.4;
+  color: var(--cinza-escuro);
+}
+
+/* Escala Likert */
+.escala-likert {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.likert-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 2px solid var(--cinza-claro);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--cinza-suave);
+}
+.likert-item.selecionada { border-color: var(--azul-claro); background: var(--azul-suave); }
+.likert-item input { width: 18px; height: 18px; accent-color: var(--azul-escuro); flex-shrink: 0; }
+.likert-numero { font-weight: 700; font-size: 0.9rem; color: var(--azul-medio); min-width: 20px; }
+.likert-texto  { font-size: 0.84rem; color: var(--cinza-escuro); }
+
+/* Campos especiais (foto, geoloc, assinatura) */
+.campo-especial {
+  border: 2px dashed var(--cinza-claro);
+  border-radius: var(--raio);
+  padding: 16px;
+  text-align: center;
+  background: var(--cinza-suave);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.campo-especial:active { border-color: var(--verde-claro); }
+.campo-especial .icone { font-size: 1.8rem; margin-bottom: 6px; }
+.campo-especial p { font-size: 0.82rem; color: var(--cinza-medio); line-height: 1.4; }
+.campo-especial .btn-captura {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: var(--verde-escuro);
+  color: white;
+  border-radius: var(--raio-pequeno);
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+#foto-preview {
+  display: none;
+  max-width: 100%;
+  border-radius: var(--raio);
+  margin-top: 8px;
+}
+
+/* Canvas de assinatura */
+#canvas-assinatura {
+  border: 2px solid var(--cinza-claro);
+  border-radius: var(--raio);
+  width: 100%;
+  max-width: 400px;
+  height: 130px;
+  background: white;
+  touch-action: none;
+  display: block;
+  margin: 0 auto;
+}
+.assinatura-acoes {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.btn-assinatura {
+  padding: 6px 14px;
+  border-radius: var(--raio-pequeno);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.btn-assinatura.limpar  { background: #fdecea; color: var(--vermelho); }
+.btn-assinatura.salvar  { background: var(--verde-suave); color: var(--verde-escuro); }
+.assinatura-salva-aviso {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--verde-medio);
+  margin-top: 5px;
+  display: none;
+}
+
+/* Botões de navegação entre etapas */
+.form-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0 8px;
+}
+.btn-nav {
+  padding: 14px 22px;
+  border-radius: var(--raio);
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.18s;
+  flex: 1;
+  max-width: 160px;
+}
+.btn-nav:active { transform: scale(0.97); }
+.btn-nav.voltar  { background: white; color: var(--cinza-escuro); border: 2px solid var(--cinza-claro); }
+.btn-nav.avancar {
+  background: linear-gradient(135deg, var(--verde-escuro), var(--verde-medio));
+  color: white;
+  box-shadow: 0 4px 14px rgba(26,107,74,0.35);
+}
+.btn-nav.finalizar {
+  background: linear-gradient(135deg, var(--azul-escuro), var(--azul-medio));
+  color: white;
+  box-shadow: 0 4px 14px rgba(26,74,122,0.35);
+}
+
+/* ============================================================
+   TELA FINAL — RESUMO E EXPORTAÇÃO
+   ============================================================ */
+.resumo-header {
+  text-align: center;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, var(--verde-escuro), var(--azul-escuro));
+  color: white;
+  border-radius: var(--raio-grande);
+  margin-bottom: 16px;
+}
+.resumo-header .icone-check { font-size: 3rem; margin-bottom: 8px; }
+.resumo-header h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+.resumo-header p  { font-size: 0.85rem; opacity: 0.85; }
+
+.resumo-secao {
+  background: white;
+  border-radius: var(--raio);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--sombra-suave);
+}
+.resumo-secao h3 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--verde-escuro);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--verde-suave);
+}
+.resumo-item {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+.resumo-pergunta { color: var(--cinza-medio); min-width: 30px; font-weight: 600; }
+.resumo-resposta { color: var(--cinza-escuro); flex: 1; }
+
+.status-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.status-opcao {
+  padding: 12px;
+  border-radius: var(--raio);
+  border: 2px solid var(--cinza-claro);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.status-opcao:active { transform: scale(0.97); }
+.status-opcao.ativo-rascunho    { border-color: #aaa; background: #f0f0f0; }
+.status-opcao.ativo-incompleto  { border-color: var(--amarelo); background: #fff3cd; }
+.status-opcao.ativo-concluido   { border-color: var(--verde-claro); background: var(--verde-suave); }
+.status-opcao.ativo-enviado     { border-color: var(--azul-claro); background: var(--azul-suave); }
+
+.grid-exportar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.btn-exportar {
+  padding: 16px 10px;
+  border-radius: var(--raio);
+  font-weight: 700;
+  font-size: 0.88rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s;
+}
+.btn-exportar:active { transform: scale(0.96); }
+.btn-exportar.json {
+  background: linear-gradient(135deg, #2d6ba8, #1a4a7a);
+  color: white;
+  box-shadow: 0 4px 14px rgba(45,107,168,0.3);
+}
+.btn-exportar.csv {
+  background: linear-gradient(135deg, #2d8f65, #1a6b4a);
+  color: white;
+  box-shadow: 0 4px 14px rgba(45,143,101,0.3);
+}
+.btn-exportar .ext {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+/* ============================================================
+   EXPORTAR TODOS
+   ============================================================ */
+.export-all-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.aberto {
+  display: flex;
+  animation: fadeIn 0.2s ease;
+}
+.modal {
+  background: white;
+  border-radius: var(--raio-grande) var(--raio-grande) 0 0;
+  padding: 24px 20px 32px;
+  width: 100%;
+  max-width: 600px;
+  animation: slideUp 0.25s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.modal h3 { font-size: 1.05rem; font-weight: 800; margin-bottom: 8px; }
+.modal p  { font-size: 0.88rem; color: var(--cinza-medio); margin-bottom: 18px; line-height: 1.5; }
+.modal-acoes { display: flex; gap: 10px; }
+.btn-modal {
+  flex: 1;
+  padding: 14px;
+  border-radius: var(--raio);
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+.btn-modal:active { transform: scale(0.97); }
+.btn-modal.cancelar { background: var(--cinza-claro); color: var(--cinza-escuro); }
+.btn-modal.confirmar{ background: var(--vermelho); color: white; }
+.btn-modal.ok       { background: var(--verde-escuro); color: white; }
+
+/* ============================================================
+   BOTÕES GERAIS
+   ============================================================ */
+.btn-principal {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--verde-escuro), var(--verde-medio));
+  color: white;
+  border-radius: var(--raio);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.18s;
+  box-shadow: 0 4px 14px rgba(26,107,74,0.3);
+  margin-bottom: 10px;
+}
+.btn-principal:active { transform: scale(0.98); }
+.btn-secundario {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  color: var(--verde-escuro);
+  border: 2px solid var(--verde-claro);
+  border-radius: var(--raio);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.18s;
+  margin-bottom: 10px;
+}
+.btn-secundario:active { transform: scale(0.98); }
+.btn-voltar-tela {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--verde-escuro);
+  padding: 8px 0;
+  margin-bottom: 14px;
+}
+
+/* Toast de notificação */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--cinza-escuro);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 9999;
+  transition: transform 0.3s ease;
+  white-space: nowrap;
+  box-shadow: var(--sombra-media);
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.visivel { transform: translateX(-50%) translateY(0); }
+.toast.sucesso  { background: var(--verde-escuro); }
+.toast.erro     { background: var(--vermelho); }
+.toast.aviso    { background: #b07800; }
+
+/* ============================================================
+   UTILITÁRIOS
+   ============================================================ */
+.espaco-bottom { height: 40px; }
+.texto-centro  { text-align: center; }
+.linha-divisor {
+  height: 1px;
+  background: var(--cinza-claro);
+  margin: 14px 0;
+}
+.info-campo {
+  font-size: 0.75rem;
+  color: var(--cinza-medio);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.campo-obrigatorio-aviso {
+  font-size: 0.75rem;
+  color: var(--vermelho);
+  margin-top: 4px;
+  display: none;
+}
+.campo-input.erro,
+.campo-select.erro,
+.campo-textarea.erro {
+  border-color: var(--vermelho);
+  background: #fff8f8;
+}
+
+/* Seletor de tipo de formulário na tela inicial */
+.tipo-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.tipo-card {
+  background: white;
+  border-radius: var(--raio);
+  padding: 18px 14px;
+  text-align: center;
+  box-shadow: var(--sombra-suave);
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.2s;
+}
+.tipo-card:active { transform: scale(0.97); }
+.tipo-card.agricultor:hover, .tipo-card.agricultor.selecionado {
+  border-color: var(--verde-claro);
+  background: var(--verde-suave);
+}
+.tipo-card.extensionista:hover, .tipo-card.extensionista.selecionado {
+  border-color: var(--azul-claro);
+  background: var(--azul-suave);
+}
+.tipo-card .tipo-icone { font-size: 2rem; margin-bottom: 8px; }
+.tipo-card .tipo-nome { font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; }
+.tipo-card .tipo-desc { font-size: 0.73rem; color: var(--cinza-medio); line-height: 1.3; }
+
+/* Campo de seleção de novo questionário */
+.novo-form-modal .campo-grupo { margin-bottom: 14px; }
+
+/* Responsividade em telas maiores */
+@media (min-width: 600px) {
+  body { background: #e8ede9; }
+  #app { box-shadow: 0 0 40px rgba(0,0,0,0.1); }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── CABEÇALHO ───────────────────────────────────────── -->
+  <header class="app-header">
+    <h1><span class="icone-agua">💧</span> Campo Hídrico</h1>
+    <div class="badge-conexao offline" id="badge-conexao">
+      <span class="dot-conexao"></span>
+      <span id="texto-conexao">Offline</span>
+    </div>
+  </header>
+
+  <!-- ── TOAST ──────────────────────────────────────────── -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ══════════════════════════════════════════════════════
+       TELA 1 — HOME
+       ══════════════════════════════════════════════════════ -->
+  <section class="tela ativa" id="tela-home">
+    <div class="home-hero">
+      <div class="icone-grande">🌊</div>
+      <h2>Coleta de Dados em Campo</h2>
+      <p>Escassez Hídrica e Agricultura Familiar<br>Funciona 100% offline</p>
+    </div>
+
+    <div class="home-stats">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Questionários</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-concluidos">0</div>
+        <div class="stat-label">Concluídos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-hoje">0</div>
+        <div class="stat-label">Hoje</div>
+      </div>
+    </div>
+
+    <p class="secao-titulo">Ações</p>
+
+    <div class="grid-acoes">
+      <button class="btn-acao destaque" onclick="mostrarModalNovoForm()">
+        <span class="icone">➕</span>
+        <span class="texto">Novo Questionário</span>
+      </button>
+      <button class="btn-acao verde" onclick="irParaTela('tela-lista')">
+        <span class="icone">📋</span>
+        <span class="texto">Questionários Salvos</span>
+      </button>
+      <button class="btn-acao azul" onclick="irParaTela('tela-exportar')">
+        <span class="icone">📤</span>
+        <span class="texto">Exportar Dados</span>
+      </button>
+      <button class="btn-acao" onclick="importarBackup()">
+        <span class="icone">📥</span>
+        <span class="texto">Importar Backup</span>
+      </button>
+    </div>
+
+    <div class="aviso-dados">
+      <p>🔒 <strong>Segurança dos dados:</strong> Tudo fica salvo neste dispositivo, mesmo sem internet.</p>
+      <p>📦 <strong>Recomendação:</strong> Exporte um backup ao final de cada dia de campo.</p>
+      <p>⚠️ Se o navegador for limpo ou o app removido, os dados locais podem ser perdidos.</p>
+    </div>
+
+    <div class="espaco-bottom"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       TELA 2 — LISTA DE QUESTIONÁRIOS
+       ══════════════════════════════════════════════════════ -->
+  <section class="tela" id="tela-lista">
+    <button class="btn-voltar-tela" onclick="irParaTela('tela-home')">← Voltar</button>
+    <p class="secao-titulo">Questionários Salvos</p>
+
+    <div class="filtros-barra">
+      <input type="text" class="input-busca" id="busca-texto" placeholder="🔍 Buscar..." oninput="filtrarLista()">
+      <select class="select-filtro" id="filtro-tipo" onchange="filtrarLista()">
+        <option value="">Todos os tipos</option>
+        <option value="agricultor">Agricultores</option>
+        <option value="extensionista">Extensionistas</option>
+      </select>
+      <select class="select-filtro" id="filtro-status" onchange="filtrarLista()">
+        <option value="">Todos os status</option>
+        <option value="rascunho">Rascunho</option>
+        <option value="incompleto">Incompleto</option>
+        <option value="concluido">Concluído</option>
+        <option value="enviado">Enviado</option>
+      </select>
+    </div>
+
+    <div class="lista-questionarios" id="lista-container">
+      <!-- Preenchido dinamicamente -->
+    </div>
+
+    <div class="espaco-bottom"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       TELA 3 — FORMULÁRIO
+       ══════════════════════════════════════════════════════ -->
+  <section class="tela" id="tela-formulario">
+    <button class="btn-voltar-tela" onclick="confirmarSairForm()">← Voltar</button>
+
+    <!-- Cabeçalho do formulário -->
+    <div class="form-cabecalho">
+      <div id="form-tipo-badge" class="form-tipo-badge tipo-agricultor">Agricultor Familiar</div>
+      <div class="form-id-linha">
+        <span class="form-id-texto" id="form-id-exibicao">ID: ---</span>
+        <span class="autosave-indicador" id="autosave-status">
+          <span class="dot"></span> Salvo
+        </span>
+      </div>
+      <div class="barra-progresso-wrapper">
+        <div class="barra-progresso-meta">
+          <span id="etapa-atual-texto">Bloco 1 de 7</span>
+          <span id="progresso-pct">0%</span>
+        </div>
+        <div class="barra-progresso">
+          <div class="barra-progresso-bar" id="barra-prog" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navegação por etapas -->
+    <div class="etapas-nav" id="etapas-nav-container">
+      <!-- Preenchido dinamicamente -->
+    </div>
+
+    <!-- Conteúdo dos blocos — AGRICULTOR -->
+    <div id="blocos-agricultor">
+
+      <!-- BLOCO 0 — Identificação do campo/entrevistador -->
+      <div class="bloco-form ativo" id="bloco-agr-0">
+        <div class="bloco-titulo"><span class="num">0</span> Dados da Coleta</div>
+        <div class="campo-grupo">
+          <label class="campo-label">Nome do entrevistador <span class="obrigatorio">*</span></label>
+          <input type="text" class="campo-input" id="agr-entrevistador" placeholder="Nome completo" autocomplete="name">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Município</label>
+          <input type="text" class="campo-input" id="agr-municipio" placeholder="Nome do município">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Comunidade / Local</label>
+          <input type="text" class="campo-input" id="agr-comunidade" placeholder="Ex: Comunidade São José">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">📍 Geolocalização (opcional)</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" class="campo-input" id="agr-geolocalizacao" placeholder="Lat, Long" readonly>
+            <button onclick="capturarGeo('agr-geolocalizacao')" style="padding:12px 14px;background:var(--verde-escuro);color:white;border-radius:var(--raio);font-size:0.8rem;font-weight:600;flex-shrink:0;">📡 Capturar</button>
+          </div>
+          <p class="info-campo">Ou insira manualmente as coordenadas</p>
+          <input type="text" class="campo-input" id="agr-geolocalizacao-manual" placeholder="Inserir manualmente (latitude, longitude)" style="margin-top:6px;">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Observações de campo</label>
+          <textarea class="campo-textarea" id="agr-obs-campo" placeholder="Anotações gerais sobre o local, condições da entrevista..."></textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO I — Identificação do Agricultor -->
+      <div class="bloco-form" id="bloco-agr-1">
+        <div class="bloco-titulo"><span class="num">I</span> Identificação</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">1.</span> Idade <span class="obrigatorio">*</span></label>
+          <input type="number" class="campo-input" id="agr-q1" placeholder="Anos" min="0" max="120">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">2.</span> Gênero</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="agr-q2" value="Masculino"> <span class="opcao-texto">Masculino</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q2" value="Feminino"> <span class="opcao-texto">Feminino</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q2" value="Não binário/Outro"> <span class="opcao-texto">Não binário / Outro</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q2" value="Prefere não responder"> <span class="opcao-texto">Prefere não responder</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">3.</span> Escolaridade</label>
+          <select class="campo-select" id="agr-q3">
+            <option value="">Selecione...</option>
+            <option>Sem escolaridade</option>
+            <option>Ensino fundamental incompleto</option>
+            <option>Ensino fundamental completo</option>
+            <option>Ensino médio incompleto</option>
+            <option>Ensino médio completo</option>
+            <option>Ensino superior incompleto</option>
+            <option>Ensino superior completo</option>
+            <option>Pós-graduação</option>
+          </select>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">4.</span> Município / comunidade onde reside</label>
+          <input type="text" class="campo-input" id="agr-q4" placeholder="Município e comunidade">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">5.</span> Tempo de residência no local</label>
+          <input type="text" class="campo-input" id="agr-q5" placeholder="Ex: 15 anos, desde criança...">
+        </div>
+      </div>
+
+      <!-- BLOCO II — Caracterização da propriedade -->
+      <div class="bloco-form" id="bloco-agr-2">
+        <div class="bloco-titulo"><span class="num">II</span> Caracterização da Propriedade</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">6.</span> Tamanho da propriedade (ha)</label>
+          <input type="number" class="campo-input" id="agr-q6" placeholder="Hectares" min="0" step="0.1">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">7.</span> Tipo de posse da terra</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="agr-q7" value="Proprietário"> <span class="opcao-texto">Proprietário</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q7" value="Posseiro"> <span class="opcao-texto">Posseiro</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q7" value="Arrendatário"> <span class="opcao-texto">Arrendatário</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q7" value="Parceiro"> <span class="opcao-texto">Parceiro/Meeiro</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q7" value="Assentado"> <span class="opcao-texto">Assentado (reforma agrária)</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q7" value="Outro"> <span class="opcao-texto">Outro</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">8.</span> Principais atividades produtivas (marque as que se aplicam)</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="agr-q8" value="Agricultura de subsistência"> <span class="opcao-texto">Agricultura de subsistência</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q8" value="Pecuária bovina"> <span class="opcao-texto">Pecuária bovina</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q8" value="Piscicultura"> <span class="opcao-texto">Piscicultura</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q8" value="Horticultura"> <span class="opcao-texto">Horticultura</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q8" value="Fruticultura"> <span class="opcao-texto">Fruticultura</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q8" value="Apicultura/Meliponicultura"> <span class="opcao-texto">Apicultura / Meliponicultura</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q8" value="Extrativismo"> <span class="opcao-texto">Extrativismo vegetal</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q8" value="Outro"> <span class="opcao-texto">Outro</span></label>
+          </div>
+          <input type="text" class="campo-input" id="agr-q8-outro" placeholder="Especifique outra atividade..." style="margin-top:8px;">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">9.</span> Número de pessoas envolvidas nas atividades produtivas</label>
+          <input type="number" class="campo-input" id="agr-q9" placeholder="Número de pessoas" min="0">
+        </div>
+      </div>
+
+      <!-- BLOCO III — Acesso e uso da água -->
+      <div class="bloco-form" id="bloco-agr-3">
+        <div class="bloco-titulo"><span class="num">III</span> Acesso e Uso da Água</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">10.</span> Fontes de água utilizadas na propriedade (marque as que se aplicam)</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="agr-q10" value="Rio/córrego"> <span class="opcao-texto">Rio / córrego / riacho</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q10" value="Poço artesiano"> <span class="opcao-texto">Poço artesiano</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q10" value="Poço comum"> <span class="opcao-texto">Poço comum / cacimba</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q10" value="Cisterna/caixa d'água"> <span class="opcao-texto">Cisterna / caixa d'água</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q10" value="Barreiro/açude"> <span class="opcao-texto">Barreiro / açude</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q10" value="Rede pública"> <span class="opcao-texto">Rede pública (SAAE/SANEMAT)</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q10" value="Carro-pipa"> <span class="opcao-texto">Carro-pipa</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q10" value="Outro"> <span class="opcao-texto">Outro</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">11.</span> A quantidade de água disponível é suficiente para as necessidades da propriedade?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="agr-q11" value="Sim, sempre suficiente"> <span class="opcao-texto">Sim, sempre suficiente</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q11" value="Em geral suficiente, com restrições na seca"> <span class="opcao-texto">Em geral suficiente, com restrições na seca</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q11" value="Insuficiente na maior parte do ano"> <span class="opcao-texto">Insuficiente na maior parte do ano</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q11" value="Constantemente insuficiente"> <span class="opcao-texto">Constantemente insuficiente</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">12.</span> Houve redução na disponibilidade de água nos últimos anos?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="agr-q12" value="Sim, redução significativa"> <span class="opcao-texto">Sim, redução significativa</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q12" value="Sim, redução moderada"> <span class="opcao-texto">Sim, redução moderada</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q12" value="Não, manteve estável"> <span class="opcao-texto">Não, manteve estável</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q12" value="Não sei / não observei"> <span class="opcao-texto">Não sei / não observei</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO IV — Impactos -->
+      <div class="bloco-form" id="bloco-agr-4">
+        <div class="bloco-titulo"><span class="num">IV</span> Impactos da Escassez Hídrica</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">13.</span> A escassez de água afetou a produção da sua propriedade?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="agr-q13" value="Não afetou"> <span class="opcao-texto">Não afetou</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q13" value="Afetou levemente"> <span class="opcao-texto">Afetou levemente</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q13" value="Afetou moderadamente"> <span class="opcao-texto">Afetou moderadamente</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q13" value="Afetou gravemente"> <span class="opcao-texto">Afetou gravemente</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">14.</span> Houve redução de renda em decorrência da escassez hídrica?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="agr-q14" value="Não houve redução"> <span class="opcao-texto">Não houve redução</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q14" value="Redução leve (até 20%)"> <span class="opcao-texto">Redução leve (até 20%)</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q14" value="Redução moderada (20-50%)"> <span class="opcao-texto">Redução moderada (20–50%)</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q14" value="Redução grave (acima de 50%)"> <span class="opcao-texto">Redução grave (acima de 50%)</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">15.</span> A escassez ocasionou perdas de plantio ou morte de animais?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="agr-q15" value="Perda total de plantio"> <span class="opcao-texto">Perda total de plantio</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q15" value="Perda parcial de plantio"> <span class="opcao-texto">Perda parcial de plantio</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q15" value="Morte de animais"> <span class="opcao-texto">Morte de animais</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q15" value="Abandono de atividade"> <span class="opcao-texto">Abandono de alguma atividade produtiva</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q15" value="Nenhuma perda"> <span class="opcao-texto">Nenhuma perda</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO V — Estratégias -->
+      <div class="bloco-form" id="bloco-agr-5">
+        <div class="bloco-titulo"><span class="num">V</span> Estratégias de Adaptação</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">16.</span> Quais estratégias você usa para lidar com a falta de água? (marque as que se aplicam)</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="agr-q16" value="Armazenamento em caixas/cisternas"> <span class="opcao-texto">Armazenamento em caixas / cisternas</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q16" value="Captação de água da chuva"> <span class="opcao-texto">Captação de água da chuva</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q16" value="Irrigação por gotejamento"> <span class="opcao-texto">Irrigação por gotejamento</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q16" value="Plantio em época adequada"> <span class="opcao-texto">Adaptação da época de plantio</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q16" value="Uso de espécies adaptadas"> <span class="opcao-texto">Uso de espécies adaptadas à seca</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q16" value="Redução de área plantada"> <span class="opcao-texto">Redução de área plantada</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q16" value="Compra de água (carro-pipa)"> <span class="opcao-texto">Compra de água (carro-pipa)</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q16" value="Nenhuma estratégia"> <span class="opcao-texto">Nenhuma estratégia específica</span></label>
+          </div>
+          <textarea class="campo-textarea" id="agr-q16-detalhe" placeholder="Descreva outras estratégias ou detalhe as selecionadas..." style="margin-top:8px;"></textarea>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">17.</span> Já recebeu apoio técnico ou orientação sobre manejo da água?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="agr-q17" value="Sim"> <span class="opcao-texto">Sim</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q17" value="Não"> <span class="opcao-texto">Não</span></label>
+          </div>
+          <textarea class="campo-textarea" id="agr-q17-detalhe" placeholder="Se sim: quem prestou o apoio? Quando? De que forma?" style="margin-top:8px;"></textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO VI — Resíduos -->
+      <div class="bloco-form" id="bloco-agr-6">
+        <div class="bloco-titulo"><span class="num">VI</span> Resíduos e Sustentabilidade Ambiental</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">18.</span> Tipos de resíduos gerados na propriedade (marque os principais)</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="agr-q18" value="Resíduos orgânicos/agropecuários"> <span class="opcao-texto">Resíduos orgânicos / agropecuários</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q18" value="Embalagens de agrotóxicos"> <span class="opcao-texto">Embalagens de agrotóxicos</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q18" value="Plásticos/embalagens gerais"> <span class="opcao-texto">Plásticos / embalagens gerais</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q18" value="Resíduos de construção"> <span class="opcao-texto">Resíduos de construção</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q18" value="Efluentes animais"> <span class="opcao-texto">Efluentes / dejetos animais</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q18" value="Eletrônicos/pilhas"> <span class="opcao-texto">Eletrônicos / pilhas / baterias</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">19.</span> Destinação final dos resíduos</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="agr-q19" value="Coleta pública"> <span class="opcao-texto">Coleta pública</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q19" value="Queima"> <span class="opcao-texto">Queima</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q19" value="Enterramento"> <span class="opcao-texto">Enterramento</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q19" value="Compostagem"> <span class="opcao-texto">Compostagem</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q19" value="Descarte a céu aberto"> <span class="opcao-texto">Descarte a céu aberto / lixão</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q19" value="Devolução de embalagens"> <span class="opcao-texto">Devolução de embalagens (INPEV)</span></label>
+            <label class="opcao-item"><input type="checkbox" name="agr-q19" value="Não sei"> <span class="opcao-texto">Não sei</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">20.</span> Existem dificuldades para o manejo adequado dos resíduos?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="agr-q20" value="Não há dificuldades"> <span class="opcao-texto">Não há dificuldades</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q20" value="Sim, falta coleta pública"> <span class="opcao-texto">Sim, falta de coleta pública</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q20" value="Sim, falta orientação técnica"> <span class="opcao-texto">Sim, falta de orientação técnica</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q20" value="Sim, custo elevado"> <span class="opcao-texto">Sim, custo elevado</span></label>
+            <label class="opcao-item"><input type="radio" name="agr-q20" value="Sim, distância/logística"> <span class="opcao-texto">Sim, distância / logística</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO VII — Percepções -->
+      <div class="bloco-form" id="bloco-agr-7">
+        <div class="bloco-titulo"><span class="num">VII</span> Percepções e Expectativas</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">21.</span> Na sua opinião, quais são as principais causas da escassez hídrica na sua região?</label>
+          <textarea class="campo-textarea" id="agr-q21" placeholder="Descreva livremente..."></textarea>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">22.</span> O que poderia melhorar a disponibilidade de água na comunidade?</label>
+          <textarea class="campo-textarea" id="agr-q22" placeholder="Sugestões, propostas..."></textarea>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">23.</span> Observações adicionais</label>
+          <textarea class="campo-textarea" id="agr-q23" placeholder="Qualquer informação complementar..."></textarea>
+        </div>
+
+        <div class="linha-divisor"></div>
+
+        <!-- Foto -->
+        <div class="campo-grupo">
+          <label class="campo-label">📷 Foto do local (opcional)</label>
+          <div class="campo-especial" onclick="document.getElementById('input-foto-agr').click()">
+            <div class="icone">📷</div>
+            <p>Toque para tirar foto ou selecionar da galeria</p>
+            <span class="btn-captura">Capturar foto</span>
+          </div>
+          <input type="file" id="input-foto-agr" accept="image/*" capture="environment" style="display:none" onchange="processarFoto(this,'foto-preview-agr','agr-foto-data')">
+          <img id="foto-preview-agr" src="" alt="Foto do local" style="display:none;max-width:100%;border-radius:var(--raio);margin-top:8px;">
+        </div>
+
+        <!-- Assinatura -->
+        <div class="campo-grupo">
+          <label class="campo-label">✍️ Assinatura do entrevistado (opcional)</label>
+          <canvas id="canvas-assinatura-agr" class="canvas-assinatura" style="border:2px solid var(--cinza-claro);border-radius:var(--raio);width:100%;height:130px;background:white;touch-action:none;display:block;"></canvas>
+          <div class="assinatura-acoes">
+            <button class="btn-assinatura limpar" onclick="limparAssinatura('canvas-assinatura-agr')">🗑 Limpar</button>
+            <button class="btn-assinatura salvar" onclick="salvarAssinatura('canvas-assinatura-agr','agr-assinatura-data')">💾 Salvar assinatura</button>
+          </div>
+          <p class="assinatura-salva-aviso" id="agr-assinatura-aviso">✅ Assinatura salva</p>
+        </div>
+      </div>
+
+    </div> <!-- fim blocos-agricultor -->
+
+    <!-- ──────────────────────────────────────────────────────
+         CONTEÚDO DOS BLOCOS — EXTENSIONISTA
+         ──────────────────────────────────────────────────── -->
+    <div id="blocos-extensionista" style="display:none;">
+
+      <!-- BLOCO 0 — Dados da coleta -->
+      <div class="bloco-form ativo" id="bloco-ext-0">
+        <div class="bloco-titulo"><span class="num">0</span> Dados da Coleta</div>
+        <div class="campo-grupo">
+          <label class="campo-label">Nome do entrevistador <span class="obrigatorio">*</span></label>
+          <input type="text" class="campo-input" id="ext-entrevistador" placeholder="Nome completo" autocomplete="name">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Município / sede da entrevista</label>
+          <input type="text" class="campo-input" id="ext-municipio" placeholder="Nome do município">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Local da entrevista</label>
+          <input type="text" class="campo-input" id="ext-comunidade" placeholder="Ex: Escritório EMPAER, campo...">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">📍 Geolocalização (opcional)</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" class="campo-input" id="ext-geolocalizacao" placeholder="Lat, Long" readonly>
+            <button onclick="capturarGeo('ext-geolocalizacao')" style="padding:12px 14px;background:var(--azul-escuro);color:white;border-radius:var(--raio);font-size:0.8rem;font-weight:600;flex-shrink:0;">📡 Capturar</button>
+          </div>
+          <input type="text" class="campo-input" id="ext-geolocalizacao-manual" placeholder="Inserir manualmente (latitude, longitude)" style="margin-top:6px;">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label">Observações de campo</label>
+          <textarea class="campo-textarea" id="ext-obs-campo" placeholder="Anotações gerais..."></textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO 1 — Perfil -->
+      <div class="bloco-form" id="bloco-ext-1">
+        <div class="bloco-titulo"><span class="num">1</span> Perfil do Respondente</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">1.</span> Instituição de atuação</label>
+          <input type="text" class="campo-input" id="ext-q1" placeholder="Ex: EMPAER, EMBRAPA, Prefeitura...">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">2.</span> Cargo / função</label>
+          <input type="text" class="campo-input" id="ext-q2" placeholder="Ex: Técnico agrícola, Engenheiro agrônomo...">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">3.</span> Tempo de atuação na área</label>
+          <input type="text" class="campo-input" id="ext-q3" placeholder="Ex: 8 anos">
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">4.</span> Municípios atendidos</label>
+          <textarea class="campo-textarea" id="ext-q4" placeholder="Liste os municípios que atende..."></textarea>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">5.</span> Principais cadeias produtivas acompanhadas</label>
+          <textarea class="campo-textarea" id="ext-q5" placeholder="Ex: pecuária bovina, horticultura, piscicultura..."></textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO 2 — Percepções sobre escassez -->
+      <div class="bloco-form" id="bloco-ext-2">
+        <div class="bloco-titulo"><span class="num">2</span> Percepções sobre Escassez Hídrica</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">6.</span> Como você avalia a disponibilidade hídrica atual na região de atuação?</label>
+          <div class="escala-likert">
+            <label class="likert-item"><input type="radio" name="ext-q6" value="1"> <span class="likert-numero">1</span> <span class="likert-texto">Muito crítica — escassez severa</span></label>
+            <label class="likert-item"><input type="radio" name="ext-q6" value="2"> <span class="likert-numero">2</span> <span class="likert-texto">Crítica — escassez significativa</span></label>
+            <label class="likert-item"><input type="radio" name="ext-q6" value="3"> <span class="likert-numero">3</span> <span class="likert-texto">Regular — escassez moderada</span></label>
+            <label class="likert-item"><input type="radio" name="ext-q6" value="4"> <span class="likert-numero">4</span> <span class="likert-texto">Razoável — pequenas restrições</span></label>
+            <label class="likert-item"><input type="radio" name="ext-q6" value="5"> <span class="likert-numero">5</span> <span class="likert-texto">Boa — sem problemas relevantes</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">7.</span> A escassez hídrica tem se agravado nos últimos anos?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="ext-q7" value="Sim, agravamento claro"> <span class="opcao-texto">Sim, agravamento claro</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q7" value="Sim, agravamento leve"> <span class="opcao-texto">Sim, agravamento leve</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q7" value="Não, manteve estável"> <span class="opcao-texto">Não, manteve estável</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q7" value="Melhorou"> <span class="opcao-texto">Melhorou</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q7" value="Varia conforme localidade"> <span class="opcao-texto">Varia conforme localidade</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">8.</span> Quais os fatores determinantes para a redução da água disponível?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="ext-q8" value="Desmatamento"> <span class="opcao-texto">Desmatamento e degradação de matas ciliares</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q8" value="Queimadas"> <span class="opcao-texto">Queimadas recorrentes</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q8" value="Mudanças climáticas"> <span class="opcao-texto">Mudanças climáticas</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q8" value="Uso excessivo"> <span class="opcao-texto">Uso excessivo / captação irregular</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q8" value="Irrigação ineficiente"> <span class="opcao-texto">Sistemas de irrigação ineficientes</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q8" value="Assoreamento"> <span class="opcao-texto">Assoreamento de rios e lagos</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q8" value="Pouca infraestrutura"> <span class="opcao-texto">Pouca infraestrutura hídrica</span></label>
+          </div>
+          <textarea class="campo-textarea" id="ext-q8-detalhe" placeholder="Outros fatores ou detalhes..." style="margin-top:8px;"></textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO 3 — Impactos -->
+      <div class="bloco-form" id="bloco-ext-3">
+        <div class="bloco-titulo"><span class="num">3</span> Impactos na Produção e no Cotidiano Rural</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">9.</span> Impactos observados com maior frequência nas comunidades atendidas</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="ext-q9" value="Perda de safras"> <span class="opcao-texto">Perda de safras / plantios</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q9" value="Morte de rebanho"> <span class="opcao-texto">Morte de rebanho / animais</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q9" value="Redução de renda"> <span class="opcao-texto">Redução de renda familiar</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q9" value="Êxodo rural"> <span class="opcao-texto">Êxodo rural</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q9" value="Conflitos por água"> <span class="opcao-texto">Conflitos por uso da água</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q9" value="Problemas de saúde"> <span class="opcao-texto">Problemas de saúde relacionados à qualidade da água</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q9" value="Abandono de atividades"> <span class="opcao-texto">Abandono de atividades produtivas</span></label>
+          </div>
+          <textarea class="campo-textarea" id="ext-q9-detalhe" placeholder="Outros impactos ou detalhes..." style="margin-top:8px;"></textarea>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">10.</span> A escassez hídrica afeta a segurança alimentar das famílias atendidas?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="ext-q10" value="Sim, gravemente"> <span class="opcao-texto">Sim, gravemente</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q10" value="Sim, moderadamente"> <span class="opcao-texto">Sim, moderadamente</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q10" value="Sim, levemente"> <span class="opcao-texto">Sim, levemente</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q10" value="Não afeta"> <span class="opcao-texto">Não afeta significativamente</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCO 4 — Manejo hídrico -->
+      <div class="bloco-form" id="bloco-ext-4">
+        <div class="bloco-titulo"><span class="num">4</span> Manejo Hídrico e Tecnologias</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">11.</span> Práticas de manejo da água mais utilizadas pelas famílias que acompanha</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="ext-q11" value="Cisterna de placas"> <span class="opcao-texto">Cisterna de placas</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q11" value="Cisterna calçadão"> <span class="opcao-texto">Cisterna calçadão</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q11" value="Irrigação por gotejamento"> <span class="opcao-texto">Irrigação por gotejamento</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q11" value="Barragem subterrânea"> <span class="opcao-texto">Barragem subterrânea</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q11" value="Captação de chuva"> <span class="opcao-texto">Captação de água da chuva</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q11" value="Reúso de água"> <span class="opcao-texto">Reúso de água</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q11" value="Manejo de solo"> <span class="opcao-texto">Manejo conservacionista do solo</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q11" value="Nenhuma prática identificada"> <span class="opcao-texto">Nenhuma prática identificada</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">12.</span> A infraestrutura hídrica existente nos municípios que atende é suficiente?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="ext-q12" value="Sim, suficiente"> <span class="opcao-texto">Sim, suficiente</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q12" value="Parcialmente"> <span class="opcao-texto">Parcialmente</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q12" value="Não, insuficiente"> <span class="opcao-texto">Não, é insuficiente</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q12" value="Crítica/precária"> <span class="opcao-texto">Crítica / precária</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">13.</span> Tecnologias ou soluções que considera prioritárias para a região</label>
+          <textarea class="campo-textarea" id="ext-q13" placeholder="Descreva tecnologias, soluções, inovações relevantes..."></textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO 5 — Políticas públicas -->
+      <div class="bloco-form" id="bloco-ext-5">
+        <div class="bloco-titulo"><span class="num">5</span> Políticas Públicas, Acesso e Assistência Técnica</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">14.</span> Como avalia o acesso às políticas públicas de gestão hídrica para a agricultura familiar?</label>
+          <div class="escala-likert">
+            <label class="likert-item"><input type="radio" name="ext-q14" value="1"> <span class="likert-numero">1</span> <span class="likert-texto">Muito ruim — sem acesso</span></label>
+            <label class="likert-item"><input type="radio" name="ext-q14" value="2"> <span class="likert-numero">2</span> <span class="likert-texto">Ruim — acesso muito limitado</span></label>
+            <label class="likert-item"><input type="radio" name="ext-q14" value="3"> <span class="likert-numero">3</span> <span class="likert-texto">Regular — acesso parcial</span></label>
+            <label class="likert-item"><input type="radio" name="ext-q14" value="4"> <span class="likert-numero">4</span> <span class="likert-texto">Bom — acesso razoável</span></label>
+            <label class="likert-item"><input type="radio" name="ext-q14" value="5"> <span class="likert-numero">5</span> <span class="likert-texto">Muito bom — acesso amplo</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">15.</span> Principais dificuldades para implementação de práticas sustentáveis</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="ext-q15" value="Custo de implementação"> <span class="opcao-texto">Custo de implementação</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q15" value="Falta de crédito/financiamento"> <span class="opcao-texto">Falta de crédito / financiamento</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q15" value="Baixo nível técnico"> <span class="opcao-texto">Baixo nível de capacitação dos agricultores</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q15" value="Resistência cultural"> <span class="opcao-texto">Resistência cultural / desconfiança</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q15" value="Falta de assistência técnica"> <span class="opcao-texto">Escassez de assistência técnica</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q15" value="Infraestrutura precária"> <span class="opcao-texto">Infraestrutura precária</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q15" value="Políticas insuficientes"> <span class="opcao-texto">Políticas públicas insuficientes</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">16.</span> Cite políticas, programas ou ações que considera eficazes para a questão hídrica</label>
+          <textarea class="campo-textarea" id="ext-q16" placeholder="Ex: Programa Água para Todos, P1MC, PNAE, PAA..."></textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO 6 — Aspectos ambientais -->
+      <div class="bloco-form" id="bloco-ext-6">
+        <div class="bloco-titulo"><span class="num">6</span> Aspectos Ambientais e Resíduos</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">17.</span> O manejo inadequado de resíduos interfere na qualidade da água nas comunidades que atende?</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="radio" name="ext-q17" value="Sim, fortemente"> <span class="opcao-texto">Sim, fortemente</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q17" value="Sim, moderadamente"> <span class="opcao-texto">Sim, moderadamente</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q17" value="Pouco"> <span class="opcao-texto">Pouco</span></label>
+            <label class="opcao-item"><input type="radio" name="ext-q17" value="Não interfere"> <span class="opcao-texto">Não interfere</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">18.</span> Tipos de resíduos mais mal gerenciados nas propriedades que acompanha</label>
+          <div class="opcoes-grupo">
+            <label class="opcao-item"><input type="checkbox" name="ext-q18" value="Embalagens de agrotóxicos"> <span class="opcao-texto">Embalagens de agrotóxicos</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q18" value="Dejetos animais"> <span class="opcao-texto">Dejetos animais</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q18" value="Plásticos gerais"> <span class="opcao-texto">Plásticos gerais</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q18" value="Efluentes domésticos"> <span class="opcao-texto">Efluentes domésticos</span></label>
+            <label class="opcao-item"><input type="checkbox" name="ext-q18" value="Resíduos de construção"> <span class="opcao-texto">Resíduos de construção</span></label>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">19.</span> Que orientações técnicas você considera mais necessárias sobre resíduos?</label>
+          <textarea class="campo-textarea" id="ext-q19" placeholder="Ex: destino de embalagens, compostagem, biodigestor..."></textarea>
+        </div>
+      </div>
+
+      <!-- BLOCO 7 — Sugestões finais -->
+      <div class="bloco-form" id="bloco-ext-7">
+        <div class="bloco-titulo"><span class="num">7</span> Sugestões e Percepções Finais</div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">20.</span> Quais ações estruturantes poderiam fortalecer a resiliência hídrica da agricultura familiar na região?</label>
+          <textarea class="campo-textarea" id="ext-q20" placeholder="Propostas, sugestões, ações de curto e longo prazo..."></textarea>
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-label"><span class="num-pergunta">21.</span> Considerações adicionais</label>
+          <textarea class="campo-textarea" id="ext-q21" placeholder="Observações, complementações, informações relevantes..."></textarea>
+        </div>
+
+        <div class="linha-divisor"></div>
+
+        <!-- Foto -->
+        <div class="campo-grupo">
+          <label class="campo-label">📷 Foto (opcional)</label>
+          <div class="campo-especial" onclick="document.getElementById('input-foto-ext').click()">
+            <div class="icone">📷</div>
+            <p>Toque para tirar foto ou selecionar da galeria</p>
+            <span class="btn-captura">Capturar foto</span>
+          </div>
+          <input type="file" id="input-foto-ext" accept="image/*" capture="environment" style="display:none" onchange="processarFoto(this,'foto-preview-ext','ext-foto-data')">
+          <img id="foto-preview-ext" src="" alt="Foto" style="display:none;max-width:100%;border-radius:var(--raio);margin-top:8px;">
+        </div>
+
+        <!-- Assinatura -->
+        <div class="campo-grupo">
+          <label class="campo-label">✍️ Assinatura do entrevistado (opcional)</label>
+          <canvas id="canvas-assinatura-ext" class="canvas-assinatura" style="border:2px solid var(--cinza-claro);border-radius:var(--raio);width:100%;height:130px;background:white;touch-action:none;display:block;"></canvas>
+          <div class="assinatura-acoes">
+            <button class="btn-assinatura limpar" onclick="limparAssinatura('canvas-assinatura-ext')">🗑 Limpar</button>
+            <button class="btn-assinatura salvar" onclick="salvarAssinatura('canvas-assinatura-ext','ext-assinatura-data')">💾 Salvar assinatura</button>
+          </div>
+          <p class="assinatura-salva-aviso" id="ext-assinatura-aviso">✅ Assinatura salva</p>
+        </div>
+      </div>
+
+    </div> <!-- fim blocos-extensionista -->
+
+    <!-- Botões de navegação -->
+    <div class="form-nav">
+      <button class="btn-nav voltar" id="btn-nav-voltar" onclick="navegarBloco(-1)">← Voltar</button>
+      <button class="btn-nav avancar" id="btn-nav-avancar" onclick="navegarBloco(1)">Avançar →</button>
+    </div>
+
+    <div class="espaco-bottom"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       TELA 4 — RESUMO / FINALIZAÇÃO
+       ══════════════════════════════════════════════════════ -->
+  <section class="tela" id="tela-resumo">
+    <button class="btn-voltar-tela" onclick="irParaTela('tela-formulario')">← Editar</button>
+
+    <div class="resumo-header">
+      <div class="icone-check">✅</div>
+      <h2>Formulário Preenchido</h2>
+      <p id="resumo-id-text">ID do registro</p>
+    </div>
+
+    <!-- Seletor de status -->
+    <div class="resumo-secao">
+      <h3>Status do Questionário</h3>
+      <div class="status-selector">
+        <div class="status-opcao" data-status="rascunho" onclick="selecionarStatus('rascunho')">📝 Rascunho</div>
+        <div class="status-opcao" data-status="incompleto" onclick="selecionarStatus('incompleto')">⏳ Incompleto</div>
+        <div class="status-opcao" data-status="concluido" onclick="selecionarStatus('concluido')">✅ Concluído</div>
+        <div class="status-opcao" data-status="enviado" onclick="selecionarStatus('enviado')">📤 Enviado</div>
+      </div>
+    </div>
+
+    <!-- Resumo das respostas -->
+    <div class="resumo-secao">
+      <h3>Resumo das Respostas</h3>
+      <div id="resumo-conteudo">
+        <!-- Preenchido dinamicamente -->
+      </div>
+    </div>
+
+    <!-- Exportar este formulário -->
+    <div class="resumo-secao">
+      <h3>Exportar Este Questionário</h3>
+      <div class="grid-exportar">
+        <button class="btn-exportar json" onclick="exportarFormIndividual('json')">
+          <span class="ext">JSON</span>
+          <span>Exportar</span>
+        </button>
+        <button class="btn-exportar csv" onclick="exportarFormIndividual('csv')">
+          <span class="ext">CSV</span>
+          <span>Exportar</span>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn-principal" onclick="irParaTela('tela-home')">🏠 Voltar ao início</button>
+    <button class="btn-secundario" onclick="mostrarModalNovoForm()">➕ Novo questionário</button>
+
+    <div class="espaco-bottom"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       TELA 5 — EXPORTAR TODOS
+       ══════════════════════════════════════════════════════ -->
+  <section class="tela" id="tela-exportar">
+    <button class="btn-voltar-tela" onclick="irParaTela('tela-home')">← Voltar</button>
+    <p class="secao-titulo">Exportar Dados</p>
+
+    <div class="resumo-secao">
+      <h3>Exportar Todos os Questionários</h3>
+      <p style="font-size:0.85rem;color:var(--cinza-medio);margin-bottom:14px;line-height:1.5;">Exporte todos os dados salvos neste dispositivo. Recomendado ao final de cada dia de campo.</p>
+      <div class="export-all-grid">
+        <button class="btn-exportar json" onclick="exportarTodos('json')">
+          <span class="ext">JSON</span>
+          <span>Backup completo</span>
+        </button>
+        <button class="btn-exportar csv" onclick="exportarTodos('csv')">
+          <span class="ext">CSV</span>
+          <span>Planilha</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="resumo-secao">
+      <h3>Importar Backup</h3>
+      <p style="font-size:0.85rem;color:var(--cinza-medio);margin-bottom:14px;line-height:1.5;">Restaure dados a partir de um arquivo JSON exportado anteriormente. Os dados existentes serão mantidos; registros com o mesmo ID serão substituídos.</p>
+      <div class="campo-especial" onclick="document.getElementById('input-importar').click()">
+        <div class="icone">📥</div>
+        <p>Toque para selecionar arquivo JSON de backup</p>
+        <span class="btn-captura">Selecionar arquivo</span>
+      </div>
+      <input type="file" id="input-importar" accept=".json" style="display:none" onchange="processarImportacao(this)">
+    </div>
+
+    <div class="aviso-dados">
+      <p>🔒 Os dados ficam salvos <strong>neste dispositivo</strong>, mesmo sem internet.</p>
+      <p>📦 <strong>Recomendação:</strong> Exporte backup ao final de cada dia de campo.</p>
+      <p>⚠️ Se o navegador for limpo ou o app removido, os dados locais podem ser perdidos.</p>
+    </div>
+
+    <div class="espaco-bottom"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       MODAL — NOVO QUESTIONÁRIO
+       ══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-novo-form">
+    <div class="modal novo-form-modal">
+      <h3>Novo Questionário</h3>
+      <p>Selecione o tipo de formulário que será aplicado:</p>
+      <div class="tipo-form-grid">
+        <div class="tipo-card agricultor" onclick="selecionarTipoForm('agricultor')" id="card-agricultor">
+          <div class="tipo-icone">🌾</div>
+          <div class="tipo-nome">Agricultor Familiar</div>
+          <div class="tipo-desc">Para aplicação com produtores rurais e agricultores familiares</div>
+        </div>
+        <div class="tipo-card extensionista" onclick="selecionarTipoForm('extensionista')" id="card-extensionista">
+          <div class="tipo-icone">🔬</div>
+          <div class="tipo-nome">Técnico Extensionista</div>
+          <div class="tipo-desc">Para técnicos, engenheiros e agentes de extensão rural</div>
+        </div>
+      </div>
+      <div class="modal-acoes">
+        <button class="btn-modal cancelar" onclick="fecharModal('modal-novo-form')">Cancelar</button>
+        <button class="btn-modal ok" onclick="iniciarNovoForm()">Iniciar →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL — CONFIRMAÇÃO DE EXCLUSÃO -->
+  <div class="modal-overlay" id="modal-confirmar-excluir">
+    <div class="modal">
+      <h3>⚠️ Excluir questionário?</h3>
+      <p>Esta ação é irreversível. O questionário e todas as respostas serão apagados permanentemente.</p>
+      <div class="modal-acoes">
+        <button class="btn-modal cancelar" onclick="fecharModal('modal-confirmar-excluir')">Cancelar</button>
+        <button class="btn-modal confirmar" onclick="confirmarExclusao()">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL — CONFIRMAÇÃO DE LIMPAR FORM -->
+  <div class="modal-overlay" id="modal-sair-form">
+    <div class="modal">
+      <h3>Sair do formulário?</h3>
+      <p>Os dados já foram salvos automaticamente. Você pode continuar editando depois.</p>
+      <div class="modal-acoes">
+        <button class="btn-modal cancelar" onclick="fecharModal('modal-sair-form')">Continuar editando</button>
+        <button class="btn-modal ok" onclick="fecharModal('modal-sair-form');irParaTela('tela-lista')">Sair e salvar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- fim #app -->
+
+<!-- ============================================================
+     INPUT OCULTO PARA IMPORTAÇÃO
+     ============================================================ -->
+<input type="file" id="input-importar-home" accept=".json" style="display:none" onchange="processarImportacao(this)">
+
+<script>
+// ============================================================
+// CAMPO HÍDRICO — JAVASCRIPT PRINCIPAL
+// Versão 1.0.0 | Offline-first | IndexedDB
+// ============================================================
+
+'use strict';
+
+// ── CONFIGURAÇÃO GLOBAL ─────────────────────────────────────
+const DB_NAME    = 'CampoHidricoDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'questionarios';
+
+let db = null;
+let formAtual = null;       // Objeto do formulário em edição
+let tipoFormSelecionado = 'agricultor';
+let blocoAtual  = 0;
+let totalBlocos = 8;        // 0..7
+let idParaExcluir = null;
+let assinaturaAtiva = {};   // mapeia canvasId -> dados
+let autosaveTimer = null;
+
+// ── ESTRUTURA DOS BLOCOS ────────────────────────────────────
+const BLOCOS_AGRICULTOR = [
+  { id: 'bloco-agr-0', titulo: 'Coleta' },
+  { id: 'bloco-agr-1', titulo: 'I. Ident.' },
+  { id: 'bloco-agr-2', titulo: 'II. Prop.' },
+  { id: 'bloco-agr-3', titulo: 'III. Água' },
+  { id: 'bloco-agr-4', titulo: 'IV. Impac.' },
+  { id: 'bloco-agr-5', titulo: 'V. Adapt.' },
+  { id: 'bloco-agr-6', titulo: 'VI. Resíd.' },
+  { id: 'bloco-agr-7', titulo: 'VII. Perc.' },
+];
+const BLOCOS_EXTENSIONISTA = [
+  { id: 'bloco-ext-0', titulo: 'Coleta' },
+  { id: 'bloco-ext-1', titulo: '1. Perfil' },
+  { id: 'bloco-ext-2', titulo: '2. Percep.' },
+  { id: 'bloco-ext-3', titulo: '3. Impac.' },
+  { id: 'bloco-ext-4', titulo: '4. Manejo' },
+  { id: 'bloco-ext-5', titulo: '5. Políti.' },
+  { id: 'bloco-ext-6', titulo: '6. Amb.' },
+  { id: 'bloco-ext-7', titulo: '7. Final' },
+];
+
+// ============================================================
+// INDEXEDDB — INICIALIZAÇÃO
+// ============================================================
+function iniciarDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE_NAME)) {
+        const store = d.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        store.createIndex('tipo',     'tipo',     { unique: false });
+        store.createIndex('status',   'status',   { unique: false });
+        store.createIndex('municipio','municipio',{ unique: false });
+        store.createIndex('dataCriacao','dataCriacao',{ unique: false });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function salvarNoDB(obj) {
+  return new Promise((resolve, reject) => {
+    const tx    = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const req   = store.put(obj);
+    req.onsuccess = () => resolve();
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function buscarTodosDB() {
+  return new Promise((resolve, reject) => {
+    const tx    = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req   = store.getAll();
+    req.onsuccess = e => resolve(e.target.result || []);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function buscarPorIdDB(id) {
+  return new Promise((resolve, reject) => {
+    const tx    = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const req   = store.get(id);
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function excluirDB(id) {
+  return new Promise((resolve, reject) => {
+    const tx    = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const req   = store.delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+// ============================================================
+// GERAÇÃO DE ID ÚNICO
+// ============================================================
+function gerarId(tipo) {
+  const prefixo = tipo === 'agricultor' ? 'AGR' : 'EXT';
+  const ts      = Date.now().toString(36).toUpperCase();
+  const rand    = Math.random().toString(36).substr(2,4).toUpperCase();
+  return `${prefixo}-${ts}-${rand}`;
+}
+
+function dataHoraAgora() {
+  const d = new Date();
+  return d.toISOString();
+}
+
+function formatarDataHora(iso) {
+  if (!iso) return '---';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+}
+
+// ============================================================
+// NAVEGAÇÃO ENTRE TELAS
+// ============================================================
+function irParaTela(id) {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.add('ativa');
+    el.scrollTop = 0;
+    window.scrollTo(0,0);
+  }
+  if (id === 'tela-home')   atualizarStats();
+  if (id === 'tela-lista')  renderizarLista();
+  if (id === 'tela-resumo') renderizarResumo();
+}
+
+// ============================================================
+// ESTATÍSTICAS NA HOME
+// ============================================================
+async function atualizarStats() {
+  try {
+    const todos = await buscarTodosDB();
+    const hoje  = new Date().toDateString();
+    const concluidos = todos.filter(q => q.status === 'concluido' || q.status === 'enviado').length;
+    const deHoje     = todos.filter(q => new Date(q.dataCriacao).toDateString() === hoje).length;
+    document.getElementById('stat-total').textContent     = todos.length;
+    document.getElementById('stat-concluidos').textContent = concluidos;
+    document.getElementById('stat-hoje').textContent      = deHoje;
+  } catch(e) { console.error('[Stats]', e); }
+}
+
+// ============================================================
+// MODAL DE NOVO FORMULÁRIO
+// ============================================================
+function mostrarModalNovoForm() {
+  tipoFormSelecionado = 'agricultor';
+  document.getElementById('card-agricultor').classList.add('selecionado');
+  document.getElementById('card-extensionista').classList.remove('selecionado');
+  abrirModal('modal-novo-form');
+}
+
+function selecionarTipoForm(tipo) {
+  tipoFormSelecionado = tipo;
+  document.getElementById('card-agricultor').classList.toggle('selecionado', tipo === 'agricultor');
+  document.getElementById('card-extensionista').classList.toggle('selecionado', tipo === 'extensionista');
+}
+
+async function iniciarNovoForm() {
+  fecharModal('modal-novo-form');
+  const id = gerarId(tipoFormSelecionado);
+  formAtual = {
+    id,
+    tipo: tipoFormSelecionado,
+    status: 'rascunho',
+    dataCriacao:   dataHoraAgora(),
+    dataEdicao:    dataHoraAgora(),
+    blocoAtual:    0,
+    respostas:     {},
+    municipio:     '',
+    comunidade:    '',
+    entrevistador: '',
+    fotoData:      null,
+    assinaturaData:null,
+  };
+  await salvarNoDB(formAtual);
+  abrirFormulario();
+}
+
+// ============================================================
+// ABRIR FORMULÁRIO (NOVO OU EXISTENTE)
+// ============================================================
+function abrirFormulario(form) {
+  if (form) formAtual = form;
+  const tipo = formAtual.tipo;
+
+  // Mostrar/ocultar blocos do tipo correto
+  document.getElementById('blocos-agricultor').style.display     = tipo === 'agricultor'    ? 'block' : 'none';
+  document.getElementById('blocos-extensionista').style.display  = tipo === 'extensionista' ? 'block' : 'none';
+
+  // Atualizar badge
+  const badge = document.getElementById('form-tipo-badge');
+  if (tipo === 'agricultor') {
+    badge.textContent = '🌾 Agricultor Familiar';
+    badge.className   = 'form-tipo-badge tipo-agricultor';
+  } else {
+    badge.textContent = '🔬 Técnico Extensionista';
+    badge.className   = 'form-tipo-badge tipo-extensionista';
+  }
+
+  document.getElementById('form-id-exibicao').textContent = 'ID: ' + formAtual.id;
+
+  totalBlocos = 8; // blocos 0..7
+  blocoAtual  = formAtual.blocoAtual || 0;
+
+  // Construir nav de etapas
+  const blocos = tipo === 'agricultor' ? BLOCOS_AGRICULTOR : BLOCOS_EXTENSIONISTA;
+  const nav    = document.getElementById('etapas-nav-container');
+  nav.innerHTML = '';
+  blocos.forEach((b, i) => {
+    const btn = document.createElement('button');
+    btn.className   = 'etapa-btn' + (i === blocoAtual ? ' ativa' : '');
+    btn.textContent = b.titulo;
+    btn.onclick     = () => irParaBloco(i);
+    nav.appendChild(btn);
+  });
+
+  // Preencher campos se houver respostas salvas
+  preencherCampos(tipo, formAtual.respostas || {});
+
+  // Iniciar assinatura
+  setTimeout(() => {
+    const canvasId = tipo === 'agricultor' ? 'canvas-assinatura-agr' : 'canvas-assinatura-ext';
+    iniciarAssinatura(canvasId);
+  }, 100);
+
+  // Mostrar bloco atual
+  mostrarBloco(blocoAtual);
+
+  // Registrar autosave em todos os campos
+  registrarAutosave(tipo);
+
+  irParaTela('tela-formulario');
+}
+
+// ============================================================
+// NAVEGAÇÃO ENTRE BLOCOS
+// ============================================================
+function irParaBloco(i) {
+  salvarFormAtual();
+  blocoAtual = i;
+  mostrarBloco(blocoAtual);
+}
+
+function navegarBloco(delta) {
+  salvarFormAtual();
+  const novo = blocoAtual + delta;
+  if (novo < 0) return;
+  if (novo >= totalBlocos) {
+    // Ir para resumo
+    irParaTela('tela-resumo');
+    return;
+  }
+  blocoAtual = novo;
+  mostrarBloco(blocoAtual);
+}
+
+function mostrarBloco(idx) {
+  const tipo   = formAtual.tipo;
+  const prefixo = tipo === 'agricultor' ? 'bloco-agr-' : 'bloco-ext-';
+
+  // Ocultar todos os blocos
+  for (let i = 0; i < totalBlocos; i++) {
+    const el = document.getElementById(prefixo + i);
+    if (el) el.classList.remove('ativo');
+  }
+
+  // Mostrar bloco atual
+  const ativo = document.getElementById(prefixo + idx);
+  if (ativo) {
+    ativo.classList.add('ativo');
+    ativo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Atualizar nav
+  document.querySelectorAll('.etapa-btn').forEach((btn, i) => {
+    btn.classList.toggle('ativa', i === idx);
+  });
+
+  // Atualizar barra de progresso
+  const pct = Math.round(((idx) / (totalBlocos - 1)) * 100);
+  document.getElementById('barra-prog').style.width = pct + '%';
+  document.getElementById('progresso-pct').textContent = pct + '%';
+  document.getElementById('etapa-atual-texto').textContent = `Bloco ${idx + 1} de ${totalBlocos}`;
+
+  // Botões de navegação
+  document.getElementById('btn-nav-voltar').style.visibility = idx === 0 ? 'hidden' : 'visible';
+  const btnAv = document.getElementById('btn-nav-avancar');
+  if (idx === totalBlocos - 1) {
+    btnAv.textContent = 'Concluir ✅';
+    btnAv.className   = 'btn-nav finalizar';
+  } else {
+    btnAv.textContent = 'Avançar →';
+    btnAv.className   = 'btn-nav avancar';
+  }
+
+  window.scrollTo(0,0);
+}
+
+// ============================================================
+// AUTOSAVE — REGISTRAR LISTENERS
+// ============================================================
+function registrarAutosave(tipo) {
+  const pref = tipo === 'agricultor' ? 'agr' : 'ext';
+  const container = tipo === 'agricultor'
+    ? document.getElementById('blocos-agricultor')
+    : document.getElementById('blocos-extensionista');
+
+  // Eventos de mudança em todos os inputs/textareas/selects
+  container.querySelectorAll('input, textarea, select').forEach(el => {
+    el.addEventListener('input',  () => agendarAutosave());
+    el.addEventListener('change', () => agendarAutosave());
+  });
+}
+
+function agendarAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    salvarFormAtual();
+    mostrarAutosaveIndicador();
+  }, 800); // salva 800ms após última alteração
+}
+
+function mostrarAutosaveIndicador() {
+  const el = document.getElementById('autosave-status');
+  if (!el) return;
+  el.innerHTML = '<span class="dot"></span> Salvo agora';
+  el.style.color = 'var(--verde-medio)';
+}
+
+// ============================================================
+// COLETAR RESPOSTAS DO FORMULÁRIO
+// ============================================================
+function coletarRespostas(tipo) {
+  const r = {};
+  const pref = tipo === 'agricultor' ? 'agr' : 'ext';
+
+  // Campos de texto simples
+  const simplesIds = tipo === 'agricultor'
+    ? ['entrevistador','municipio','comunidade','geolocalizacao','geolocalizacao-manual','obs-campo',
+       'q1','q3','q4','q5','q6','q9','q8-outro','q16-detalhe','q17-detalhe','q21','q22','q23']
+    : ['entrevistador','municipio','comunidade','geolocalizacao','geolocalizacao-manual','obs-campo',
+       'q1','q2','q3','q4','q5','q8-detalhe','q9-detalhe','q13','q16','q19','q20','q21'];
+
+  simplesIds.forEach(id => {
+    const el = document.getElementById(`${pref}-${id}`);
+    if (el) r[id] = el.value.trim();
+  });
+
+  // Radio buttons
+  const radios = document.querySelectorAll(
+    tipo === 'agricultor'
+      ? '#blocos-agricultor input[type="radio"]'
+      : '#blocos-extensionista input[type="radio"]'
+  );
+  radios.forEach(radio => {
+    if (radio.checked) {
+      const name = radio.name.replace(`${pref}-`, '');
+      r[name] = radio.value;
+    }
+  });
+
+  // Checkboxes — agrupa por name
+  const checkGroups = {};
+  const checks = document.querySelectorAll(
+    tipo === 'agricultor'
+      ? '#blocos-agricultor input[type="checkbox"]'
+      : '#blocos-extensionista input[type="checkbox"]'
+  );
+  checks.forEach(cb => {
+    const name = cb.name.replace(`${pref}-`, '');
+    if (!checkGroups[name]) checkGroups[name] = [];
+    if (cb.checked) checkGroups[name].push(cb.value);
+  });
+  Object.assign(r, checkGroups);
+
+  return r;
+}
+
+// ============================================================
+// PREENCHER CAMPOS COM DADOS SALVOS
+// ============================================================
+function preencherCampos(tipo, respostas) {
+  if (!respostas || Object.keys(respostas).length === 0) return;
+  const pref = tipo === 'agricultor' ? 'agr' : 'ext';
+
+  Object.keys(respostas).forEach(key => {
+    const val = respostas[key];
+
+    // Campo simples
+    const elSimples = document.getElementById(`${pref}-${key}`);
+    if (elSimples && (elSimples.tagName === 'INPUT' || elSimples.tagName === 'TEXTAREA' || elSimples.tagName === 'SELECT')) {
+      elSimples.value = val;
+      return;
+    }
+
+    // Radio
+    if (typeof val === 'string') {
+      const radios = document.querySelectorAll(`input[name="${pref}-${key}"][type="radio"]`);
+      radios.forEach(r => { r.checked = (r.value === val); });
+    }
+
+    // Checkbox
+    if (Array.isArray(val)) {
+      const checks = document.querySelectorAll(`input[name="${pref}-${key}"][type="checkbox"]`);
+      checks.forEach(cb => { cb.checked = val.includes(cb.value); });
+    }
+  });
+
+  // Foto preview
+  if (respostas.fotoData) {
+    const imgId = tipo === 'agricultor' ? 'foto-preview-agr' : 'foto-preview-ext';
+    const img   = document.getElementById(imgId);
+    if (img) { img.src = respostas.fotoData; img.style.display = 'block'; }
+  }
+}
+
+// ============================================================
+// SALVAR FORMULÁRIO ATUAL NO INDEXEDDB
+// ============================================================
+async function salvarFormAtual() {
+  if (!formAtual || !db) return;
+  const tipo      = formAtual.tipo;
+  const respostas = coletarRespostas(tipo);
+
+  // Extrair campos de identificação
+  const pref = tipo === 'agricultor' ? 'agr' : 'ext';
+  formAtual.entrevistador = respostas['entrevistador'] || '';
+  formAtual.municipio     = respostas['municipio']     || '';
+  formAtual.comunidade    = respostas['comunidade']    || '';
+  formAtual.respostas     = respostas;
+  formAtual.blocoAtual    = blocoAtual;
+  formAtual.dataEdicao    = dataHoraAgora();
+
+  // Foto
+  const fotoDataKey = tipo === 'agricultor' ? 'agr-foto-data' : 'ext-foto-data';
+  if (window[fotoDataKey]) formAtual.fotoData = window[fotoDataKey];
+
+  // Assinatura
+  const assDataKey = tipo === 'agricultor' ? 'agr-assinatura-data' : 'ext-assinatura-data';
+  if (window[assDataKey]) formAtual.assinaturaData = window[assDataKey];
+
+  try {
+    await salvarNoDB(formAtual);
+  } catch(e) {
+    console.error('[Autosave]', e);
+  }
+}
+
+// ============================================================
+// RENDERIZAR LISTA DE QUESTIONÁRIOS
+// ============================================================
+async function renderizarLista() {
+  try {
+    let todos = await buscarTodosDB();
+
+    // Filtros
+    const textoBusca  = (document.getElementById('busca-texto')?.value || '').toLowerCase();
+    const filtroTipo  = document.getElementById('filtro-tipo')?.value   || '';
+    const filtroStatus= document.getElementById('filtro-status')?.value || '';
+
+    if (textoBusca)   todos = todos.filter(q =>
+      (q.id             || '').toLowerCase().includes(textoBusca) ||
+      (q.municipio      || '').toLowerCase().includes(textoBusca) ||
+      (q.comunidade     || '').toLowerCase().includes(textoBusca) ||
+      (q.entrevistador  || '').toLowerCase().includes(textoBusca)
+    );
+    if (filtroTipo)   todos = todos.filter(q => q.tipo   === filtroTipo);
+    if (filtroStatus) todos = todos.filter(q => q.status === filtroStatus);
+
+    // Ordenar mais recentes primeiro
+    todos.sort((a,b) => new Date(b.dataEdicao) - new Date(a.dataEdicao));
+
+    const container = document.getElementById('lista-container');
+    if (todos.length === 0) {
+      container.innerHTML = `
+        <div class="lista-vazia">
+          <div class="icone-vazio">📋</div>
+          <p>Nenhum questionário encontrado.<br>Crie um novo na tela inicial.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = todos.map(q => {
+      const tipoLabel  = q.tipo === 'agricultor' ? '🌾 Agricultor' : '🔬 Extensionista';
+      const statusBadge = `<span class="badge-status ${q.status}">${q.status}</span>`;
+      const local      = [q.municipio, q.comunidade].filter(Boolean).join(' / ') || 'Local não informado';
+      const data       = formatarDataHora(q.dataEdicao);
+      const progresso  = calcularProgresso(q);
+
+      return `
+        <div class="card-questionario status-${q.status}">
+          <div class="card-q-topo">
+            <span class="card-q-id">${q.id}</span>
+            ${statusBadge}
+          </div>
+          <div class="card-q-nome">${tipoLabel} — ${local}</div>
+          <div class="card-q-meta">
+            <span>📅 ${data}</span>
+            <span>👤 ${q.entrevistador || 'Sem nome'}</span>
+          </div>
+          <div class="mini-progresso">
+            <div class="mini-progresso-bar" style="width:${progresso}%"></div>
+          </div>
+          <div class="card-q-acoes">
+            <button class="btn-mini abrir"  onclick="abrirQuestionario('${q.id}')">✏️ Editar</button>
+            <button class="btn-mini dup"    onclick="duplicarQuestionario('${q.id}')">📋 Duplicar</button>
+            <button class="btn-mini exp"    onclick="exportarUm('${q.id}','json')">📤 JSON</button>
+            <button class="btn-mini exp"    onclick="exportarUm('${q.id}','csv')">📊 CSV</button>
+            <button class="btn-mini excluir" onclick="pedirExclusao('${q.id}')">🗑 Excluir</button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('[Lista]', e);
+  }
+}
+
+function filtrarLista() { renderizarLista(); }
+
+function calcularProgresso(q) {
+  const r = q.respostas || {};
+  const total = q.tipo === 'agricultor' ? 23 : 21;
+  const preenchidos = Object.values(r).filter(v =>
+    (typeof v === 'string' && v.trim() !== '') ||
+    (Array.isArray(v) && v.length > 0)
+  ).length;
+  return Math.min(100, Math.round((preenchidos / total) * 100));
+}
+
+async function abrirQuestionario(id) {
+  try {
+    const q = await buscarPorIdDB(id);
+    if (!q) { mostrarToast('Questionário não encontrado', 'erro'); return; }
+    formAtual = q;
+    tipoFormSelecionado = q.tipo;
+    abrirFormulario(q);
+  } catch(e) { console.error(e); }
+}
+
+async function duplicarQuestionario(id) {
+  try {
+    const q = await buscarPorIdDB(id);
+    if (!q) return;
+    const novo = JSON.parse(JSON.stringify(q));
+    novo.id           = gerarId(novo.tipo);
+    novo.dataCriacao  = dataHoraAgora();
+    novo.dataEdicao   = dataHoraAgora();
+    novo.status       = 'rascunho';
+    await salvarNoDB(novo);
+    mostrarToast('Questionário duplicado!', 'sucesso');
+    renderizarLista();
+  } catch(e) { console.error(e); }
+}
+
+function pedirExclusao(id) {
+  idParaExcluir = id;
+  abrirModal('modal-confirmar-excluir');
+}
+
+async function confirmarExclusao() {
+  fecharModal('modal-confirmar-excluir');
+  if (!idParaExcluir) return;
+  try {
+    await excluirDB(idParaExcluir);
+    mostrarToast('Questionário excluído.', 'aviso');
+    idParaExcluir = null;
+    renderizarLista();
+    atualizarStats();
+  } catch(e) { console.error(e); }
+}
+
+// ============================================================
+// CONFIRMAR SAIR DO FORMULÁRIO
+// ============================================================
+function confirmarSairForm() {
+  salvarFormAtual();
+  abrirModal('modal-sair-form');
+}
+
+// ============================================================
+// RENDERIZAR RESUMO
+// ============================================================
+async function renderizarResumo() {
+  if (!formAtual) return;
+
+  // Re-carregar do DB (garante dados mais recentes)
+  try {
+    const fresh = await buscarPorIdDB(formAtual.id);
+    if (fresh) formAtual = fresh;
+  } catch(e) {}
+
+  document.getElementById('resumo-id-text').textContent = `ID: ${formAtual.id} | ${formatarDataHora(formAtual.dataCriacao)}`;
+
+  // Destaque do status atual
+  document.querySelectorAll('.status-opcao').forEach(el => {
+    el.className = 'status-opcao';
+  });
+  selecionarStatus(formAtual.status || 'rascunho', false);
+
+  // Resumo de respostas
+  const r   = formAtual.respostas || {};
+  const div = document.getElementById('resumo-conteudo');
+  const itens = Object.entries(r)
+    .filter(([k,v]) => v && ((typeof v === 'string' && v.trim()) || (Array.isArray(v) && v.length)))
+    .map(([k,v]) => {
+      const val = Array.isArray(v) ? v.join(', ') : String(v);
+      return `<div class="resumo-item">
+        <span class="resumo-pergunta">${k}:</span>
+        <span class="resumo-resposta">${val.substring(0,200)}${val.length>200?'...':''}</span>
+      </div>`;
+    });
+  div.innerHTML = itens.length
+    ? itens.join('')
+    : '<p style="font-size:0.85rem;color:var(--cinza-medio);">Nenhuma resposta registrada ainda.</p>';
+}
+
+function selecionarStatus(status, salvar=true) {
+  document.querySelectorAll('.status-opcao').forEach(el => {
+    const s = el.dataset.status;
+    const base = `status-opcao`;
+    el.className = base + (s === status ? ` ativo-${s}` : '');
+  });
+  if (formAtual) {
+    formAtual.status = status;
+    if (salvar) salvarNoDB(formAtual).catch(console.error);
+  }
+}
+
+// ============================================================
+// EXPORTAÇÃO
+// ============================================================
+function exportarUm(id, formato) {
+  buscarPorIdDB(id).then(q => {
+    if (!q) return;
+    if (formato === 'json') baixarJSON([q], `campo-hidrico-${id}`);
+    else                    baixarCSV([q], `campo-hidrico-${id}`);
+  });
+}
+
+function exportarFormIndividual(formato) {
+  if (!formAtual) return;
+  salvarFormAtual().then ? salvarFormAtual() : null;
+  if (formato === 'json') baixarJSON([formAtual], `campo-hidrico-${formAtual.id}`);
+  else                    baixarCSV([formAtual], `campo-hidrico-${formAtual.id}`);
+}
+
+async function exportarTodos(formato) {
+  try {
+    const todos = await buscarTodosDB();
+    if (todos.length === 0) { mostrarToast('Nenhum dado para exportar.', 'aviso'); return; }
+    const data  = new Date().toISOString().slice(0,10);
+    if (formato === 'json') baixarJSON(todos, `campo-hidrico-backup-${data}`);
+    else                    baixarCSV(todos, `campo-hidrico-todos-${data}`);
+    mostrarToast(`Exportados ${todos.length} registros.`, 'sucesso');
+  } catch(e) { console.error(e); mostrarToast('Erro ao exportar.', 'erro'); }
+}
+
+function baixarJSON(dados, nomeArq) {
+  const blob = new Blob([JSON.stringify({
+    app:     'Campo Hídrico v1.0',
+    exportado: dataHoraAgora(),
+    total:   dados.length,
+    dados
+  }, null, 2)], { type: 'application/json' });
+  _download(blob, nomeArq + '.json');
+}
+
+function baixarCSV(dados, nomeArq) {
+  if (!dados || !dados.length) return;
+  // Cabeçalho dinâmico
+  const campos = ['id','tipo','status','dataCriacao','dataEdicao','entrevistador','municipio','comunidade'];
+  // Coletar todas as chaves de respostas
+  const resKeys = new Set();
+  dados.forEach(q => Object.keys(q.respostas || {}).forEach(k => resKeys.add(k)));
+  const colunas = [...campos, ...Array.from(resKeys)];
+
+  const linhas = dados.map(q => colunas.map(col => {
+    let val = '';
+    if (campos.includes(col)) val = q[col] || '';
+    else val = (q.respostas || {})[col] || '';
+    if (Array.isArray(val)) val = val.join(' | ');
+    val = String(val).replace(/"/g, '""').replace(/\n/g,' ');
+    return `"${val}"`;
+  }).join(','));
+
+  const csv  = [colunas.join(','), ...linhas].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  _download(blob, nomeArq + '.csv');
+}
+
+function _download(blob, nome) {
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// IMPORTAÇÃO DE BACKUP
+// ============================================================
+function importarBackup() {
+  document.getElementById('input-importar-home').click();
+}
+
+async function processarImportacao(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  try {
+    const text = await file.text();
+    const json = JSON.parse(text);
+    const lista = json.dados || json; // compatível com array simples ou objeto envelope
+    if (!Array.isArray(lista)) { mostrarToast('Arquivo inválido.', 'erro'); return; }
+
+    let importados = 0;
+    for (const q of lista) {
+      if (q && q.id) {
+        await salvarNoDB(q);
+        importados++;
+      }
+    }
+    mostrarToast(`${importados} registros importados!`, 'sucesso');
+    atualizarStats();
+    input.value = '';
+  } catch(e) {
+    console.error(e);
+    mostrarToast('Erro ao importar: arquivo inválido.', 'erro');
+  }
+}
+
+// ============================================================
+// GEOLOCALIZAÇÃO
+// ============================================================
+function capturarGeo(campoId) {
+  if (!navigator.geolocation) {
+    mostrarToast('GPS não disponível neste dispositivo.', 'aviso');
+    return;
+  }
+  mostrarToast('Capturando localização...', '');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const campo = document.getElementById(campoId);
+      if (campo) { campo.value = `${lat}, ${lng}`; agendarAutosave(); }
+      mostrarToast('Localização capturada!', 'sucesso');
+    },
+    err => {
+      mostrarToast('Não foi possível obter GPS. Insira manualmente.', 'aviso');
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+// ============================================================
+// FOTO
+// ============================================================
+function processarFoto(input, previewId, dataKey) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data  = e.target.result;
+    window[dataKey] = data;
+    const img   = document.getElementById(previewId);
+    if (img) { img.src = data; img.style.display = 'block'; }
+    agendarAutosave();
+    mostrarToast('Foto salva!', 'sucesso');
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// ============================================================
+// ASSINATURA
+// ============================================================
+function iniciarAssinatura(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  // Ajustar resolução real
+  const rect = canvas.getBoundingClientRect();
+  canvas.width  = rect.width  * (window.devicePixelRatio || 1);
+  canvas.height = rect.height * (window.devicePixelRatio || 1);
+
+  const ctx   = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+  ctx.lineWidth   = 2;
+  ctx.lineCap     = 'round';
+  ctx.strokeStyle = '#1a2740';
+
+  let desenhando = false;
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    if (e.touches) return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  canvas.addEventListener('mousedown',  e => { desenhando = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x,p.y); });
+  canvas.addEventListener('mousemove',  e => { if(!desenhando)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); });
+  canvas.addEventListener('mouseup',    () => desenhando = false);
+  canvas.addEventListener('mouseleave', () => desenhando = false);
+
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); desenhando=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); });
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); if(!desenhando)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); });
+  canvas.addEventListener('touchend',   () => desenhando = false);
+}
+
+function limparAssinatura(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function salvarAssinatura(canvasId, dataKey) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  window[dataKey] = canvas.toDataURL();
+  const avisoId = canvasId.replace('canvas-assinatura-', '') + '-assinatura-aviso';
+  const aviso   = document.getElementById(avisoId);
+  if (aviso) {
+    aviso.style.display = 'block';
+    setTimeout(() => { aviso.style.display = 'none'; }, 3000);
+  }
+  agendarAutosave();
+  mostrarToast('Assinatura salva!', 'sucesso');
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function abrirModal(id) {
+  document.getElementById(id).classList.add('aberto');
+}
+function fecharModal(id) {
+  document.getElementById(id).classList.remove('aberto');
+}
+// Fechar ao clicar no overlay
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) fecharModal(overlay.id);
+  });
+});
+
+// ============================================================
+// TOAST DE NOTIFICAÇÃO
+// ============================================================
+let toastTimer = null;
+function mostrarToast(msg, tipo) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'toast ' + (tipo || '');
+  clearTimeout(toastTimer);
+  setTimeout(() => el.classList.add('visivel'), 10);
+  toastTimer = setTimeout(() => el.classList.remove('visivel'), 3000);
+}
+
+// ============================================================
+// CONEXÃO ONLINE/OFFLINE
+// ============================================================
+function atualizarConexao() {
+  const badge = document.getElementById('badge-conexao');
+  const texto = document.getElementById('texto-conexao');
+  if (navigator.onLine) {
+    badge.className  = 'badge-conexao online';
+    texto.textContent = 'Online';
+  } else {
+    badge.className  = 'badge-conexao offline';
+    texto.textContent = 'Offline';
+  }
+}
+window.addEventListener('online',  atualizarConexao);
+window.addEventListener('offline', atualizarConexao);
+
+// ============================================================
+// OPCAO ITEM — VISUAL DE SELEÇÃO (RADIO/CHECKBOX)
+// ============================================================
+document.addEventListener('change', e => {
+  const target = e.target;
+  if (target.type === 'radio') {
+    const name = target.name;
+    document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+      r.closest('.opcao-item,  .likert-item')
+       ?.classList.toggle('selecionada', r.checked);
+    });
+  }
+  if (target.type === 'checkbox') {
+    target.closest('.opcao-item')?.classList.toggle('selecionada', target.checked);
+  }
+});
+
+// ============================================================
+// SERVICE WORKER
+// ============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(r => console.log('[SW] Registrado:', r.scope))
+      .catch(e => console.warn('[SW] Falha:', e));
+  });
+}
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+async function inicializar() {
+  try {
+    await iniciarDB();
+    atualizarConexao();
+    await atualizarStats();
+
+    // Recuperar último formulário aberto automaticamente
+    const ultimoId = localStorage.getItem('campoHidrico_ultimoFormId');
+    if (ultimoId) {
+      try {
+        const ultimo = await buscarPorIdDB(ultimoId);
+        if (ultimo && ultimo.status === 'rascunho') {
+          // Mostrar botão de retorno (não forçar — usuário decide)
+          console.log('[App] Rascunho encontrado:', ultimoId);
+        }
+      } catch(e) {}
+    }
+
+    console.log('[App] Campo Hídrico inicializado ✅');
+  } catch(e) {
+    console.error('[App] Erro na inicialização:', e);
+    mostrarToast('Erro ao iniciar banco de dados local.', 'erro');
+  }
+}
+
+// Salvar ID do form atual no localStorage (para recuperação)
+const _salvarNoDB_orig = salvarNoDB;
+async function salvarNoDB(obj) {
+  if (obj && obj.id) localStorage.setItem('campoHidrico_ultimoFormId', obj.id);
+  return _salvarNoDB_orig(obj);
+}
+
+// Prevenir perda acidental ao fechar a aba/janela durante edição
+window.addEventListener('beforeunload', e => {
+  if (document.getElementById('tela-formulario')?.classList.contains('ativa')) {
+    salvarFormAtual();
+  }
+});
+
+// Inicializar ao carregar a página
+document.addEventListener('DOMContentLoaded', inicializar);
+</script>
+</body>
+</html>
