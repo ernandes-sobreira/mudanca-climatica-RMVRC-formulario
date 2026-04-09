@@ -847,10 +847,15 @@ img { max-width: 100%; }
   z-index: 999;
   align-items: flex-end;
   justify-content: center;
+  /* CRÍTICO: pointer-events só no fundo, não nos filhos */
 }
 .modal-overlay.aberto {
   display: flex;
   animation: fadeIn 0.2s ease;
+}
+/* O modal interno recebe os cliques normalmente */
+.modal-overlay .modal {
+  pointer-events: all;
 }
 .modal {
   background: white;
@@ -1797,7 +1802,7 @@ img { max-width: 100%; }
   <!-- ══════════════════════════════════════════════════════
        MODAL — NOVO QUESTIONÁRIO
        ══════════════════════════════════════════════════════ -->
-  <div class="modal-overlay" id="modal-novo-form">
+  <div class="modal-overlay" id="modal-novo-form" onclick="if(event.target===this)fecharModal('modal-novo-form')">
     <div class="modal novo-form-modal">
       <h3>Novo Questionário</h3>
       <p>Selecione o tipo de formulário que será aplicado:</p>
@@ -1815,7 +1820,7 @@ img { max-width: 100%; }
       </div>
       <div class="modal-acoes">
         <button class="btn-modal cancelar" onclick="fecharModal('modal-novo-form')">Cancelar</button>
-        <button class="btn-modal ok" onclick="iniciarNovoForm()">Iniciar →</button>
+        <button class="btn-modal ok" id="btn-iniciar-form">Iniciar →</button>
       </div>
     </div>
   </div>
@@ -2728,14 +2733,7 @@ function abrirModal(id) {
 function fecharModal(id) {
   document.getElementById(id).classList.remove('aberto');
 }
-// Fechar ao clicar NO FUNDO do overlay (não em elementos filhos)
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', e => {
-      if (e.target === overlay) fecharModal(overlay.id);
-    });
-  });
-});
+// Modal: fechar ao clicar no fundo escuro (não nos filhos)
 
 // ============================================================
 // TOAST DE NOTIFICAÇÃO
@@ -2806,13 +2804,21 @@ async function inicializar() {
     atualizarConexao();
     await atualizarStats();
 
+    // Binding seguro do botão Iniciar (evita problemas com onclick inline + modal overlay)
+    const btnIniciar = document.getElementById('btn-iniciar-form');
+    if (btnIniciar) {
+      btnIniciar.addEventListener('click', function(e) {
+        e.stopPropagation();
+        iniciarNovoForm();
+      });
+    }
+
     // Recuperar último formulário aberto automaticamente
     const ultimoId = localStorage.getItem('campoHidrico_ultimoFormId');
     if (ultimoId) {
       try {
         const ultimo = await buscarPorIdDB(ultimoId);
         if (ultimo && ultimo.status === 'rascunho') {
-          // Mostrar botão de retorno (não forçar — usuário decide)
           console.log('[App] Rascunho encontrado:', ultimoId);
         }
       } catch(e) {}
