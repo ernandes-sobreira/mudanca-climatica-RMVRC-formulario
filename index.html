@@ -674,7 +674,7 @@ function abrForm(f){
   setTimeout(()=>iCv(t==='agricultor'?'cv-a':'cv-e'),200);
   mBloco();
   regAS(t);
-  irT('tela-form');
+  window.irT('tela-form');
 }
 
 function mBloco(){
@@ -692,7 +692,7 @@ function mBloco(){
   window.scrollTo(0,0);
 }
 
-function nBloco(d){salva();if(BA+d<0)return;if(BA+d>=8){irT('tela-res');return}BA+=d;mBloco()}
+function nBloco(d){salva();if(BA+d<0)return;if(BA+d>=8){window.irT('tela-res');return}BA+=d;mBloco()}
 
 // AUTOSAVE
 function regAS(t){
@@ -737,7 +737,7 @@ function pForm(t,resp){
 }
 
 // SAIR
-function sair(){salva();abrD('sair')}
+function sair(){salva();window.abrD('sair')}
 
 // LISTA
 async function rLista(){
@@ -771,8 +771,8 @@ async function rLista(){
 function calcP(q){const r=q.respostas||{},tot=q.tipo==='agricultor'?23:21,p=Object.values(r).filter(v=>(typeof v==='string'&&v.trim())||(Array.isArray(v)&&v.length)).length;return Math.min(100,Math.round(p/tot*100))}
 async function abrQ(id){const q=await get(id);if(q){FA=q;TS=q.tipo;abrForm(q)}}
 async function dupQ(id){const q=await get(id);if(!q)return;const n=JSON.parse(JSON.stringify(q));n.id=gID(n.tipo);n.dataCriacao=now();n.dataEdicao=now();n.status='rascunho';await put(n);toast('Duplicado!','ok');rLista()}
-function pedX(id){IDX=id;abrD('excl')}
-async function confX(){fchD('excl');if(!IDX)return;await del(IDX);IDX=null;toast('Excluído.','av');rLista();updSt()}
+function pedX(id){IDX=id;window.abrD('excl')}
+async function confX(){window.fchD('excl');if(!IDX)return;await del(IDX);IDX=null;toast('Excluído.','av');rLista();updSt()}
 
 // RESUMO
 async function rRes(){
@@ -817,16 +817,17 @@ async function init(){
   try{
     await aDB();updCx();await updSt();
 
-    // Bindings via window.X — garante referência correta em qualquer ambiente
-    document.getElementById('bn-novo').addEventListener('click', window.abrNovo);
-    document.getElementById('bn-novo-res').addEventListener('click', window.abrNovo);
-    document.getElementById('bn-iniciar').addEventListener('click', window.iniciar);
+    // Bindings — window.X garante referência correta em qualquer ambiente
+    document.getElementById('bn-novo').addEventListener('click',window.abrNovo);
+    document.getElementById('bn-novo-res').addEventListener('click',window.abrNovo);
+    document.getElementById('bn-iniciar').addEventListener('click',window.iniciar);
     document.getElementById('bn-cancel-novo').addEventListener('click',()=>window.fchD('novo'));
-    document.getElementById('bn-sair').addEventListener('click', window.sair);
+    document.getElementById('bn-sair').addEventListener('click',window.sair);
     document.getElementById('bn-cancel-sair').addEventListener('click',()=>window.fchD('sair'));
     document.getElementById('bn-conf-sair').addEventListener('click',()=>{window.fchD('sair');window.irT('tela-lista')});
-    document.getElementById('bn-conf-excl').addEventListener('click', window.confX);
+    document.getElementById('bn-conf-excl').addEventListener('click',window.confX);
     document.getElementById('bn-cancel-excl').addEventListener('click',()=>window.fchD('excl'));
+    // Fechar drawers ao clicar no fundo
     ['novo','excl','sair'].forEach(id=>{document.getElementById('bg-'+id).addEventListener('click',()=>window.fchD(id))});
 
     console.log('[Campo Hídrico] v2 OK ✅');
@@ -841,7 +842,7 @@ window.nBloco=nBloco;window.sair=sair;window.selSt=selSt;
 window.abrQ=abrQ;window.dupQ=dupQ;window.pedX=pedX;window.confX=confX;
 window.expI=expI;window.expT=expT;window.eUm=eUm;window.pImp=pImp;
 window.cGeo=cGeo;window.pFoto=pFoto;window.lAss=lAss;window.sAss=sAss;
-window.rLista=rLista;window.toast=toast;window.updSt=updSt;window.rRes=rRes;
+window.rLista=rLista;window.toast=toast;
 </script>
 </body>
 </html>
