@@ -2026,11 +2026,22 @@ function selecionarTipoForm(tipo) {
 
 async function iniciarNovoForm() {
   fecharModal('modal-novo-form');
+
+  // Garantir que o banco de dados está pronto
+  if (!db) {
+    try { await iniciarDB(); }
+    catch(e) {
+      mostrarToast('Erro ao abrir banco de dados. Tente novamente.', 'erro');
+      console.error('[iniciarNovoForm] DB não pronto:', e);
+      return;
+    }
+  }
+
   const id = gerarId(tipoFormSelecionado);
   formAtual = {
     id,
-    tipo: tipoFormSelecionado,
-    status: 'rascunho',
+    tipo:          tipoFormSelecionado,
+    status:        'rascunho',
     dataCriacao:   dataHoraAgora(),
     dataEdicao:    dataHoraAgora(),
     blocoAtual:    0,
@@ -2041,7 +2052,15 @@ async function iniciarNovoForm() {
     fotoData:      null,
     assinaturaData:null,
   };
-  await salvarNoDB(formAtual);
+
+  try {
+    await salvarNoDB(formAtual);
+    localStorage.setItem('campoHidrico_ultimoFormId', id);
+  } catch(e) {
+    console.error('[iniciarNovoForm] Erro ao salvar:', e);
+    // Continua mesmo assim — autosave tentará depois
+  }
+
   abrirFormulario();
 }
 
@@ -2310,6 +2329,8 @@ async function salvarFormAtual() {
 
   try {
     await salvarNoDB(formAtual);
+    // Rastrear último form para recuperação
+    localStorage.setItem('campoHidrico_ultimoFormId', formAtual.id);
   } catch(e) {
     console.error('[Autosave]', e);
   }
@@ -2707,10 +2728,12 @@ function abrirModal(id) {
 function fecharModal(id) {
   document.getElementById(id).classList.remove('aberto');
 }
-// Fechar ao clicar no overlay
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) fecharModal(overlay.id);
+// Fechar ao clicar NO FUNDO do overlay (não em elementos filhos)
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) fecharModal(overlay.id);
+    });
   });
 });
 
@@ -2766,9 +2789,11 @@ document.addEventListener('change', e => {
 // ============================================================
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js')
+    // Detecta o caminho base automaticamente (funciona em GitHub Pages com subdiretório)
+    const swPath = new URL('./service-worker.js', window.location.href).href;
+    navigator.serviceWorker.register(swPath, { scope: './' })
       .then(r => console.log('[SW] Registrado:', r.scope))
-      .catch(e => console.warn('[SW] Falha:', e));
+      .catch(e => console.warn('[SW] Falha (não afeta o funcionamento offline via IndexedDB):', e.message));
   });
 }
 
@@ -2800,12 +2825,7 @@ async function inicializar() {
   }
 }
 
-// Salvar ID do form atual no localStorage (para recuperação)
-const _salvarNoDB_orig = salvarNoDB;
-async function salvarNoDB(obj) {
-  if (obj && obj.id) localStorage.setItem('campoHidrico_ultimoFormId', obj.id);
-  return _salvarNoDB_orig(obj);
-}
+// (rastreamento de último form feito dentro de salvarFormAtual)
 
 // Prevenir perda acidental ao fechar a aba/janela durante edição
 window.addEventListener('beforeunload', e => {
