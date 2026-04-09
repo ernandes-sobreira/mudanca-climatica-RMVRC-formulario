@@ -817,18 +817,17 @@ async function init(){
   try{
     await aDB();updCx();await updSt();
 
-    // Bindings — todos via addEventListener para máxima compatibilidade
-    document.getElementById('bn-novo').addEventListener('click',abrNovo);
-    document.getElementById('bn-novo-res').addEventListener('click',abrNovo);
-    document.getElementById('bn-iniciar').addEventListener('click',iniciar);
-    document.getElementById('bn-cancel-novo').addEventListener('click',()=>fchD('novo'));
-    document.getElementById('bn-sair').addEventListener('click',sair);
-    document.getElementById('bn-cancel-sair').addEventListener('click',()=>fchD('sair'));
-    document.getElementById('bn-conf-sair').addEventListener('click',()=>{fchD('sair');irT('tela-lista')});
-    document.getElementById('bn-conf-excl').addEventListener('click',confX);
-    document.getElementById('bn-cancel-excl').addEventListener('click',()=>fchD('excl'));
-    // Fechar drawers ao clicar no fundo
-    ['novo','excl','sair'].forEach(id=>{document.getElementById('bg-'+id).addEventListener('click',()=>fchD(id))});
+    // Bindings via window.X — garante referência correta em qualquer ambiente
+    document.getElementById('bn-novo').addEventListener('click', window.abrNovo);
+    document.getElementById('bn-novo-res').addEventListener('click', window.abrNovo);
+    document.getElementById('bn-iniciar').addEventListener('click', window.iniciar);
+    document.getElementById('bn-cancel-novo').addEventListener('click',()=>window.fchD('novo'));
+    document.getElementById('bn-sair').addEventListener('click', window.sair);
+    document.getElementById('bn-cancel-sair').addEventListener('click',()=>window.fchD('sair'));
+    document.getElementById('bn-conf-sair').addEventListener('click',()=>{window.fchD('sair');window.irT('tela-lista')});
+    document.getElementById('bn-conf-excl').addEventListener('click', window.confX);
+    document.getElementById('bn-cancel-excl').addEventListener('click',()=>window.fchD('excl'));
+    ['novo','excl','sair'].forEach(id=>{document.getElementById('bg-'+id).addEventListener('click',()=>window.fchD(id))});
 
     console.log('[Campo Hídrico] v2 OK ✅');
   }catch(e){console.error(e);toast('Erro ao iniciar. Recarregue a página.','err')}
@@ -842,7 +841,7 @@ window.nBloco=nBloco;window.sair=sair;window.selSt=selSt;
 window.abrQ=abrQ;window.dupQ=dupQ;window.pedX=pedX;window.confX=confX;
 window.expI=expI;window.expT=expT;window.eUm=eUm;window.pImp=pImp;
 window.cGeo=cGeo;window.pFoto=pFoto;window.lAss=lAss;window.sAss=sAss;
-window.rLista=rLista;window.toast=toast;
+window.rLista=rLista;window.toast=toast;window.updSt=updSt;window.rRes=rRes;
 </script>
 </body>
 </html>
