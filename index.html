@@ -191,7 +191,7 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
   </div>
   <p class="st">Ações</p>
   <div class="gac">
-    <button class="bac dst" id="bn-novo"><span class="ic">➕</span><span class="tx">Novo Questionário</span></button>
+    <button class="bac dst" id="bn-novo" onclick="abrNovo()"><span class="ic">➕</span><span class="tx">Novo Questionário</span></button>
     <button class="bac vd" onclick="irT('tela-lista')"><span class="ic">📋</span><span class="tx">Questionários Salvos</span></button>
     <button class="bac az" onclick="irT('tela-exp')"><span class="ic">📤</span><span class="tx">Exportar Dados</span></button>
     <button class="bac" onclick="document.getElementById('ii2').click()"><span class="ic">📥</span><span class="tx">Importar Backup</span></button>
@@ -569,8 +569,8 @@ canvas.asn{border:2px solid var(--c3);border-radius:var(--r);width:100%;height:1
     <div class="tcd ext" id="tc-e" onclick="selT('extensionista')"><div class="tic">🔬</div><div class="tn">Técnico Extensionista</div><div class="td">Para técnicos, engenheiros e agentes de extensão</div></div>
   </div>
   <div class="drac">
-    <button class="bdr cn" id="bn-cancel-novo">Cancelar</button>
-    <button class="bdr ok" id="bn-iniciar">Iniciar →</button>
+    <button class="bdr cn" id="bn-cancel-novo" onclick="fchD('novo')">Cancelar</button>
+    <button class="bdr ok" id="bn-iniciar" onclick="iniciar()">Iniciar →</button>
   </div>
 </div>
 
@@ -605,6 +605,28 @@ let db=null,FA=null,TS='agricultor',BA=0,IDX=null,AST=null;
 const BA_=['Coleta','I.Ident','II.Prop','III.Água','IV.Impac','V.Adapt','VI.Resíd','VII.Perc'];
 const BE_=['Coleta','1.Perfil','2.Percep','3.Impac','4.Manejo','5.Políti','6.Amb','7.Final'];
 
+// Expor funções no escopo global ANTES de qualquer DOMContentLoaded
+// Isso garante que onclick inline no HTML funcione mesmo sem servidor HTTP
+window.irT=function(id){
+  document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa'));
+  document.getElementById(id).classList.add('ativa');
+  window.scrollTo(0,0);
+  if(id==='tela-home')updSt();
+  if(id==='tela-lista')rLista();
+  if(id==='tela-res')rRes();
+};
+window.abrD=function(id){document.getElementById('bg-'+id).style.display='block';const d=document.getElementById('dr-'+id);d.style.display='block';d.classList.add('open')};
+window.fchD=function(id){document.getElementById('bg-'+id).style.display='none';document.getElementById('dr-'+id).style.display='none'};
+window.abrNovo=function(){TS='agricultor';document.getElementById('tc-a').classList.add('s3');document.getElementById('tc-e').classList.remove('s3');window.abrD('novo')};
+window.selT=function(t){TS=t;document.getElementById('tc-a').classList.toggle('s3',t==='agricultor');document.getElementById('tc-e').classList.toggle('s3',t==='extensionista')};
+window.iniciar=async function(){
+  window.fchD('novo');
+  if(!db){try{await aDB()}catch(e){toast('Erro no banco de dados.','err');return}}
+  FA={id:gID(TS),tipo:TS,status:'rascunho',dataCriacao:now(),dataEdicao:now(),blocoAtual:0,respostas:{},municipio:'',comunidade:'',entrevistador:'',fotoData:null,assData:null};
+  try{await put(FA);localStorage.setItem('lf',FA.id)}catch(e){console.warn(e)}
+  abrForm();
+};
+
 // DB
 function aDB(){return new Promise((r,j)=>{const q=indexedDB.open(DBN,DBV);q.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(ST))d.createObjectStore(ST,{keyPath:'id'})};q.onsuccess=e=>{db=e.target.result;r(db)};q.onerror=e=>j(e)})}
 function put(o){return new Promise((r,j)=>{const t=db.transaction(ST,'readwrite');t.objectStore(ST).put(o).onsuccess=r;t.onerror=j})}
@@ -626,36 +648,12 @@ function updCx(){const b=document.getElementById('bcx'),t=document.getElementByI
 window.addEventListener('online',updCx);window.addEventListener('offline',updCx);
 
 // TELAS
-function irT(id){
-  document.querySelectorAll('.tela').forEach(t=>t.classList.remove('ativa'));
-  document.getElementById(id).classList.add('ativa');
-  window.scrollTo(0,0);
-  if(id==='tela-home')updSt();
-  if(id==='tela-lista')rLista();
-  if(id==='tela-res')rRes();
-}
-
 // STATS
 async function updSt(){
   const a=await all(),h=new Date().toDateString();
   document.getElementById('st0').textContent=a.length;
   document.getElementById('st1').textContent=a.filter(q=>q.status==='concluido'||q.status==='enviado').length;
   document.getElementById('st2').textContent=a.filter(q=>new Date(q.dataCriacao).toDateString()===h).length;
-}
-
-// DRAWER
-function abrD(id){document.getElementById('bg-'+id).style.display='block';const d=document.getElementById('dr-'+id);d.style.display='block';d.classList.add('open')}
-function fchD(id){document.getElementById('bg-'+id).style.display='none';document.getElementById('dr-'+id).style.display='none'}
-
-// NOVO FORM
-function abrNovo(){TS='agricultor';document.getElementById('tc-a').classList.add('s3');document.getElementById('tc-e').classList.remove('s3');abrD('novo')}
-function selT(t){TS=t;document.getElementById('tc-a').classList.toggle('s3',t==='agricultor');document.getElementById('tc-e').classList.toggle('s3',t==='extensionista')}
-async function iniciar(){
-  fchD('novo');
-  if(!db){try{await aDB()}catch(e){toast('Erro no banco de dados.','err');return}}
-  FA={id:gID(TS),tipo:TS,status:'rascunho',dataCriacao:now(),dataEdicao:now(),blocoAtual:0,respostas:{},municipio:'',comunidade:'',entrevistador:'',fotoData:null,assData:null};
-  try{await put(FA);localStorage.setItem('lf',FA.id)}catch(e){console.warn(e)}
-  abrForm();
 }
 
 // ABRIR FORM
@@ -838,6 +836,13 @@ async function init(){
 
 window.addEventListener('beforeunload',()=>{if(document.getElementById('tela-form')?.classList.contains('ativa'))salva()});
 document.addEventListener('DOMContentLoaded',init);
+
+// Aliases globais para onclick inline no HTML
+window.nBloco=nBloco;window.sair=sair;window.selSt=selSt;
+window.abrQ=abrQ;window.dupQ=dupQ;window.pedX=pedX;window.confX=confX;
+window.expI=expI;window.expT=expT;window.eUm=eUm;window.pImp=pImp;
+window.cGeo=cGeo;window.pFoto=pFoto;window.lAss=lAss;window.sAss=sAss;
+window.rLista=rLista;window.toast=toast;
 </script>
 </body>
 </html>
